@@ -26,7 +26,7 @@ function folds(a, y, amp = 0.0035) {
 function vHalfAngle(y) {
   if (y <= V_START) return 0;
   const t = Math.min(1, (y - V_START) / (SHIRT_TOP - V_START));
-  return 0.030 + 0.155 * Math.pow(t, 0.95);
+  return 0.055 + 0.235 * Math.pow(t, 0.90);
 }
 
 export function buildOutfit() {
@@ -75,53 +75,34 @@ export function buildOutfit() {
   g.add(shirt);
 
   /* --------------------------------------------------------- collar ----- */
-  const collarBands = [];
-  for (const s of [1, -1]) {
-    // pale blue under-layer shows as a piping rim
-    const blue = bilinearPatch(
-      onTorso(s * 0.006, 1.408, 0.0365),
-      onTorso(s * 0.40, 1.398, 0.0365),
-      onTorso(s * 0.26, 1.272, 0.0365),
-      onTorso(s * 0.014, 1.228, 0.0365),
-      { uSeg: 16, vSeg: 12, bulge: 0.008, normal: new THREE.Vector3(s * 0.4, 0, 1) }
-    );
-    const blueMesh = new THREE.Mesh(blue, A.mat.trimShade);
-    blueMesh.name = 'collarRim';
-    blueMesh.userData.noOutline = true;
-    g.add(blueMesh);
-    collarBands.push(blueMesh);
-
-    const white = bilinearPatch(
-      onTorso(s * 0.021, 1.400, 0.0395),
-      onTorso(s * 0.365, 1.390, 0.0395),
-      onTorso(s * 0.245, 1.281, 0.0395),
-      onTorso(s * 0.024, 1.244, 0.0395),
-      { uSeg: 16, vSeg: 12, bulge: 0.0105, normal: new THREE.Vector3(s * 0.4, 0, 1) }
-    );
-    const whiteMesh = new THREE.Mesh(white, A.mat.trim);
-    whiteMesh.name = 'collar';
-    whiteMesh.castShadow = true;
-    whiteMesh.userData.noOutline = true;
-    g.add(whiteMesh);
-    collarBands.push(whiteMesh);
+  // Notched lapels: a strip that follows the V edge, the way a real pyjama
+  // collar folds back, rather than a slab of white across the chest.
+  for (const sgn of [1, -1]) {
+    for (const [grow, mat, name, pad] of [
+      [0.0355, A.mat.trimShade, 'collarRim', 0.0],
+      [0.0385, A.mat.trim, 'collar', 0.012],
+    ]) {
+      const geo = surfaceShell({
+        uSeg: 10,
+        vSeg: 26,
+        closed: false,
+        flip: sgn > 0,
+        point: (u, v, out) => {
+          const y = lerp(1.410, 1.196, v);
+          const inner = vHalfAngle(y) + 0.012 + pad;
+          const outer = inner + 0.125 + 0.085 * (1 - v) - pad;
+          const a = Math.PI / 2 + sgn * lerp(inner, outer, u);
+          onTorso(a, y, grow + 0.006 * Math.sin(Math.PI * u), out);
+        },
+        uv: (u, v) => [u, v * 3],
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.name = name;
+      mesh.castShadow = name === 'collar';
+      mesh.userData.noOutline = true;
+      g.add(mesh);
+    }
   }
-
-  // back neck band
-  const backBand = surfaceShell({
-    uSeg: 48,
-    vSeg: 6,
-    closed: false,
-    point: (u, v, out) => {
-      const a = Math.PI / 2 + 0.20 + u * (TAU - 0.40);
-      const y = lerp(1.366, 1.418, v);
-      onTorso(a, y, 0.040 - 0.008 * v, out);
-    },
-    uv: (u, v) => [u * 3, v],
-  });
-  const backBandMesh = new THREE.Mesh(backBand, A.mat.trim);
-  backBandMesh.name = 'collarBack';
-  backBandMesh.userData.noOutline = true;
-  g.add(backBandMesh);
 
   /* --------------------------------------------------------- placket ---- */
   const placketGeo = surfaceShell({
@@ -212,7 +193,7 @@ export function buildOutfit() {
 
   // short legs with scalloped hems
   for (const s of [-1, 1]) {
-    const cx = s * 0.072;
+    const cx = s * 0.070;
     const geo = surfaceShell({
       uSeg: 64,
       vSeg: 26,
@@ -220,9 +201,9 @@ export function buildOutfit() {
       point: (u, v, out) => {
         const a = u * TAU;
         const scallop = 0.017 * Math.abs(Math.sin(4 * a));
-        const hemY = 0.716 - scallop;
-        const y = lerp(0.875, hemY, v);
-        const r = lerp(0.088, 0.081, v);
+        const hemY = 0.760 - scallop;
+        const y = lerp(0.900, hemY, v);
+        const r = lerp(0.090, 0.088, v);
         const rr = r * (1 + 0.05 * smoothstep(0.7, 1.0, v));
         out.set(cx + rr * Math.cos(a), y, rr * Math.sin(a) * 0.94 + 0.004);
       },

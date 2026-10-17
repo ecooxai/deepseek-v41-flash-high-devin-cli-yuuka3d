@@ -128,7 +128,7 @@ export function buildHair() {
         const root = headSurface(thetaTop, phi, R * 1.06);
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
         const tipY = -1.245 + 0.048 * Math.abs(su) + 0.040 * Math.sin(su * 6.2 + 0.4);
-        const tipX = su * (0.245 + 0.055 * Math.abs(su));
+        const tipX = su * (0.222 + 0.045 * Math.abs(su));
         const tipZ = -0.118 - 0.05 * Math.abs(su);
         const bulge = (0.052 + 0.026 * Math.abs(su)) * Math.sin(Math.PI * Math.pow(v, 0.85));
         const sway = 0.016 * Math.sin(su * 3.1 + 1.2) * Math.sin(Math.PI * v);
@@ -160,7 +160,7 @@ export function buildHair() {
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
     const hemWave = 0.030 * Math.sin(s * 2.1 + 0.7);
     const tip = new THREE.Vector3(
-      s * (0.238 + 0.062 * as),
+      s * (0.218 + 0.050 * as),
       -1.215 + 0.050 * as + hemWave,
       -0.112 - 0.048 * as
     );
@@ -253,56 +253,69 @@ export function buildHair() {
   }
 
   /* ============================================================= FRINGE = */
-  // Locks that lie over the scalp shell; each is solved so its tip lands on a
-  // controlled "brow line" just above the eyes rather than at a fixed length.
-  const NB = 17;
+  // Like the back, the fringe is one continuous sheet with a pointed lower
+  // edge; loose strands are layered on top only for surface detail.
+  {
+    const fringeGeo = surfaceShell({
+      uSeg: 110,
+      vSeg: 24,
+      closed: false,
+      flip: true,
+      point: (u, v, out) => {
+        const su = u * 2 - 1;
+        const phi = Math.PI / 2 + su * 1.34;
+        const front = Math.sin(phi);
+        const r = R * (capSwell(front) + 0.028);
+        const thetaTop = 0.26 + 0.30 * Math.pow(Math.abs(su), 1.1);
+        const root = headSurface(thetaTop, phi, r);
+        const tipTheta =
+          1.19 + 0.16 * Math.pow(Math.abs(su), 1.3) + 0.085 * Math.sin(su * 11.5 + 0.3);
+        const tip = headSurface(tipTheta, phi, r + R * 0.012);
+        const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
+        out.lerpVectors(root, tip, v);
+        out.addScaledVector(dir, 0.022 * Math.sin(Math.PI * v));
+      },
+      uv: (u, v) => [u * 4, v * 2],
+    });
+    paintAlongV(fringeGeo, [
+      [0.0, 0x352c5e],
+      [0.35, 0x4c4084],
+      [0.72, 0x6557a8],
+      [1.0, 0x7b6cc2],
+    ]);
+    const fringe = new THREE.Mesh(fringeGeo, assets().mat.hair);
+    fringe.name = 'hairFringe';
+    fringe.castShadow = true;
+    fringe.userData.noOutline = true;
+    g.add(fringe);
+    addOutline(fringe, { thickness: 0.0030 });
+  }
+
+  // loose locks layered over the fringe sheet
+  const NB = 11;
   for (let i = 0; i < NB; i++) {
     const t = (i / (NB - 1)) * 2 - 1;
     const at = Math.abs(t);
     const j = rnd() - 0.5;
-    const phi0 = Math.PI / 2 + t * 1.40 + 0.025 * j;
-    const theta0 = 0.10 + 0.54 * Math.pow(at, 1.05);
-    const rootR = R * 1.075;
+    const phi0 = Math.PI / 2 + t * 1.30 + 0.02 * j;
+    const theta0 = 0.14 + 0.50 * Math.pow(at, 1.05);
+    const rootR = R * (capSwell(Math.sin(phi0)) + 0.030);
     const root = headSurface(theta0, phi0, rootR);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const browLine = 0.047 - 0.009 * at + 0.018 * (rnd() - 0.5);
+    const browLine = 0.041 - 0.009 * at + 0.016 * (rnd() - 0.5);
     const drop = Math.max(0.03, root.y - browLine);
     const tip = root
       .clone()
-      .addScaledVector(dir, 0.030 + 0.022 * at)
+      .addScaledVector(dir, 0.026 + 0.016 * at)
       .add(new THREE.Vector3(t * 0.020 + 0.006 * j, -drop, 0));
-    const p1 = root.clone().lerp(tip, 0.36).addScaledVector(dir, 0.020);
-    const p2 = root.clone().lerp(tip, 0.72).addScaledVector(dir, 0.026);
+    const p1 = root.clone().lerp(tip, 0.36).addScaledVector(dir, 0.018);
+    const p2 = root.clone().lerp(tip, 0.72).addScaledVector(dir, 0.022);
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.042, 0.016, 0.028),
-      sheetT(0.012, 0.008),
-      { segs: 30, radial: 14, stops: i % 3 === 0 ? HAIR_STOPS_DEEP : HAIR_STOPS, outline: 0.0024 }
-    );
-  }
-
-  // finer strands threaded through the fringe for separation
-  for (let i = 0; i < 9; i++) {
-    const t = (i / 9) * 2 - 1;
-    const at = Math.abs(t);
-    const j = rnd() - 0.5;
-    const phi0 = Math.PI / 2 + t * 1.06 + 0.06 * j;
-    const theta0 = 0.52 + 0.36 * at;
-    const root = headSurface(theta0, phi0, R * 1.125);
-    const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const drop = Math.max(0.026, root.y - (0.056 - 0.010 * at + 0.006 * j));
-    const tip = root
-      .clone()
-      .addScaledVector(dir, 0.020)
-      .add(new THREE.Vector3(t * 0.010, -drop, 0));
-    const p1 = root.clone().lerp(tip, 0.5).addScaledVector(dir, 0.010);
-    addStrand(
-      g,
-      [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.020, 0.012, 0.011),
+      sheetW(0.030, 0.012, 0.018),
       sheetT(0.010, 0.006),
-      { segs: 16, radial: 10, stops: HAIR_STOPS, outline: 0.0022 }
+      { segs: 28, radial: 12, stops: i % 3 === 0 ? HAIR_STOPS_DEEP : HAIR_STOPS, outline: 0.0022 }
     );
   }
 
@@ -315,7 +328,7 @@ export function buildHair() {
       const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
       const tipY = -0.56 - 0.22 * k - 0.05 * rnd();
       const tipX = s * (0.096 + 0.044 * k + 0.010 * rnd());
-      const tipZ = -0.004 - 0.032 * k;
+      const tipZ = -0.030 - 0.032 * k;
       const tip = new THREE.Vector3(tipX, tipY, tipZ);
       const p1 = root.clone().lerp(tip, 0.30).addScaledVector(dir, 0.020);
       p1.z += 0.012;
@@ -334,7 +347,7 @@ export function buildHair() {
     const phi0 = Math.PI / 2 + s * 0.96;
     const root = headSurface(0.58, phi0, R * 1.075);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const tip = new THREE.Vector3(s * 0.128, -0.90, 0.040);
+    const tip = new THREE.Vector3(s * 0.132, -0.90, -0.022);
     const p1 = root.clone().lerp(tip, 0.22).addScaledVector(dir, 0.026);
     const p2 = root.clone().lerp(tip, 0.52).addScaledVector(dir, 0.020);
     const p3 = root.clone().lerp(tip, 0.80).addScaledVector(dir, 0.008);

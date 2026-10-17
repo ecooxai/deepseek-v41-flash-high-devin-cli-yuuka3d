@@ -160,10 +160,10 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.176, 0.600, 0.092);
+  g.position.set(0.182, 0.545, 0.096);
   g.rotation.set(-0.05, 0.26, -0.26);
 
-  const geo = pillowGeometry(0.282, 0.492, 0.228);
+  const geo = pillowGeometry(0.246, 0.530, 0.222);
   const mesh = new THREE.Mesh(geo, A.mat.pillow);
   mesh.name = 'pillowMesh';
   mesh.castShadow = true;
