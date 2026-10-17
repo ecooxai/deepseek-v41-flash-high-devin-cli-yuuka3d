@@ -49,7 +49,7 @@ try {
     const w = view === 'face' ? 1100 : W;
     const h = view === 'face' ? 1100 : H;
     await page.setViewport({ width: w, height: h });
-    await page.goto(`http://127.0.0.1:8137/index.html?view=${view}&shot=1`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`http://127.0.0.1:8137/index.html?view=${view}&shot=1&_=${Date.now()}`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction('window.__APP_READY__ === true', { timeout: 60000 });
     await sleep(600);
     const raw = path.join(OUT, `_raw_${name}.png`);

@@ -61,7 +61,7 @@ try {
     if (m.type() === 'error') errors.push('console: ' + m.text());
   });
 
-  const url = `${base}${base.includes('?') ? '&' : '?'}view=${view}&zoom=${zoom}&shot=1`;
+  const url = `${base}${base.includes('?') ? '&' : '?'}view=${view}&zoom=${zoom}&shot=1&_=${Date.now()}`;
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
   // wait for the app to signal it has rendered its first frames

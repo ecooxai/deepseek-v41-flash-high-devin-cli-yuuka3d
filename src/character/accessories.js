@@ -135,7 +135,7 @@ export function buildHeadband() {
 /* ------------------------------------------------------------- pillow --- */
 
 export function pillowGeometry(w, h, d) {
-  const geo = puffyBox(w, h, d, { seg: 20, round: 0.64, bulge: 0.010 });
+  const geo = puffyBox(w, h, d, { seg: 24, round: 0.46, bulge: 0.012 });
   const pos = geo.attributes.position;
   const v = new THREE.Vector3();
   const n = new THREE.Vector3();
@@ -147,8 +147,8 @@ export function pillowGeometry(w, h, d) {
     v.z *= taper;
     n.copy(v).normalize();
     const wob =
-      0.0045 * Math.sin(v.x * 34 + 1.2) * Math.sin(v.y * 19) * Math.sin(v.z * 27) +
-      0.0022 * Math.sin(v.y * 41 + 0.4);
+      0.0034 * Math.sin(v.x * 26 + 1.2) * Math.sin(v.y * 15) * Math.sin(v.z * 21) +
+      0.0020 * Math.sin(v.y * 33 + 0.4);
     v.addScaledVector(n, wob);
     pos.setXYZ(i, v.x, v.y, v.z);
   }
@@ -160,10 +160,10 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.180, 0.726, 0.090);
+  g.position.set(0.176, 0.600, 0.092);
   g.rotation.set(-0.05, 0.26, -0.26);
 
-  const geo = pillowGeometry(0.278, 0.436, 0.224);
+  const geo = pillowGeometry(0.282, 0.492, 0.228);
   const mesh = new THREE.Mesh(geo, A.mat.pillow);
   mesh.name = 'pillowMesh';
   mesh.castShadow = true;

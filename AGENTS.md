@@ -93,6 +93,18 @@ tools/
 
 ## Status
 
-Iteration 35 / 1000 · self-assessed **82 / 100**. Known weak spots: hands are
-still crude, the side profile is dominated by the hair mass, and the face
-geometry shows facets under raking light.
+Iteration 47 / 1000 · self-assessed **86 / 100**.
+
+Known weak spots (in priority order):
+
+1. Hands are still crude — four swept fingers and a thumb read as a mitten at
+   close range.
+2. The side profile is dominated by the hair mass; the face silhouette barely
+   reads from `view=side`.
+3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
+4. The pillow is a rounded slab, not a stitched cushion.
+
+Measurement helpers that proved useful when tuning proportions: render with
+`?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette
+width profile against the reference with a small script — several proportion
+fixes came from that rather than from eyeballing renders.

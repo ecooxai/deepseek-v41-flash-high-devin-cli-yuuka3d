@@ -222,8 +222,8 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
   if (y < 0) {
     const u = Math.min(1, -y);
     // slim, smoothly tapering jaw — the anime chin
-    const sx = 1 - 0.26 * Math.pow(u, 1.5);
-    const sz = 1 - 0.22 * Math.pow(u, 1.6);
+    const sx = 1 - 0.30 * Math.pow(u, 1.45);
+    const sz = 1 - 0.26 * Math.pow(u, 1.55);
     X *= sx;
     Z *= sz;
     // the jaw juts forward, giving the chin its profile
@@ -273,12 +273,50 @@ export function headSurface(theta, phi, R, out = new THREE.Vector3()) {
 /* --------------------------------------------------------------- solids */
 
 /**
+ * Weld coincident vertices so `computeVertexNormals` produces smooth shading.
+ * BoxGeometry keeps six independent faces, which otherwise leaves hard creases
+ * all over a "rounded" box.
+ */
+export function weldVertices(geo, tol = 1e-5) {
+  const pos = geo.attributes.position;
+  const uv = geo.attributes.uv;
+  const key = (x, y, z) =>
+    `${Math.round(x / tol)}|${Math.round(y / tol)}|${Math.round(z / tol)}`;
+  const map = new Map();
+  const remap = new Int32Array(pos.count);
+  const positions = [];
+  const uvs = [];
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const k = key(x, y, z);
+    let idx = map.get(k);
+    if (idx === undefined) {
+      idx = positions.length / 3;
+      map.set(k, idx);
+      positions.push(x, y, z);
+      if (uv) uvs.push(uv.getX(i), uv.getY(i));
+    }
+    remap[i] = idx;
+  }
+  const src = geo.index ? geo.index.array : null;
+  const indices = src ? Array.from(src, (v) => remap[v]) : Array.from(remap);
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  if (uv) out.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  out.setIndex(indices);
+  out.computeVertexNormals();
+  return out;
+}
+
+/**
  * Rounded box ("spherified" cube) — the workhorse for pillow, slippers, hands.
  * Corners are pulled toward a sphere of radius min(half-extent) so the result
  * reads as a soft cushion rather than a hard cube.
  */
 export function puffyBox(w, h, d, { seg = 10, round = 0.42, bulge = 0 } = {}) {
-  const geo = new THREE.BoxGeometry(w, h, d, seg, seg, seg);
+  const geo = weldVertices(new THREE.BoxGeometry(w, h, d, seg, seg, seg));
   const pos = geo.attributes.position;
   const hw = w / 2;
   const hh = h / 2;

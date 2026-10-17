@@ -29,15 +29,15 @@ function profileFn(points) {
 export const POSE = {
   armRaised: {
     side: -1,
-    points: [V3(-0.114, 1.332, 0.004), V3(-0.216, 1.222, 0.018), V3(-0.286, 1.140, 0.026), V3(-0.222, 1.264, 0.046), V3(-0.156, 1.392, 0.056)],
-    wrist: V3(-0.176, 1.392, 0.030),
-    handDir: V3(0.24, 0.94, 0.24).normalize(),
+    points: [V3(-0.114, 1.372, 0.004), V3(-0.230, 1.272, 0.016), V3(-0.300, 1.192, 0.024), V3(-0.232, 1.312, 0.046), V3(-0.156, 1.392, 0.056)],
+    wrist: V3(-0.188, 1.424, 0.010),
+    handDir: V3(0.16, 0.96, 0.22).normalize(),
     palmNormal: V3(0.90, -0.1, 0.42).normalize(),
   },
   armDown: {
     side: 1,
-    points: [V3(0.116, 1.332, 0.004), V3(0.148, 1.214, 0.0), V3(0.164, 1.086, 0.004), V3(0.156, 0.955, 0.026), V3(0.146, 0.828, 0.046)],
-    wrist: V3(0.145, 0.821, 0.048),
+    points: [V3(0.116, 1.372, 0.004), V3(0.148, 1.254, 0.0), V3(0.164, 1.120, 0.004), V3(0.156, 0.972, 0.026), V3(0.146, 0.838, 0.046)],
+    wrist: V3(0.145, 0.831, 0.048),
     handDir: V3(-0.14, -0.96, 0.24).normalize(),
     palmNormal: V3(-0.86, -0.2, 0.47).normalize(),
   },
@@ -71,7 +71,7 @@ export function buildNeck() {
   const g = new THREE.Group();
   g.name = 'neck';
   const curve = curveFromPoints(
-    [V3(0, 1.345, -0.004), V3(0, 1.386, 0.002), V3(0, 1.43, 0.006), V3(0, 1.478, 0.006)],
+    [V3(0, 1.382, -0.004), V3(0, 1.420, 0.002), V3(0, 1.458, 0.006), V3(0, 1.500, 0.006)],
     0.5
   );
   const geo = tubeAlongCurve(curve, profileFn([[0, 0.0415], [0.35, 0.034], [0.75, 0.0295], [1, 0.0295]]), {
@@ -110,7 +110,7 @@ export function buildArms() {
     delt.userData.noOutline = true;
     g.add(delt);
 
-    const hand = makeHand({ side: pose.side, curl: pose.side < 0 ? 0.42 : 0.95 });
+    const hand = makeHand({ side: pose.side, curl: pose.side < 0 ? 0.24 : 0.95 });
     placeHand(hand, pose.wrist, pose.handDir, pose.palmNormal);
     g.add(hand);
   }
@@ -136,7 +136,7 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   const g = new THREE.Group();
   g.name = 'hand';
 
-  const palm = new THREE.Mesh(puffyBox(0.046, 0.052, 0.020, { seg: 8, round: 0.42 }), A.mat.skin);
+  const palm = new THREE.Mesh(puffyBox(0.052, 0.058, 0.023, { seg: 10, round: 0.5 }), A.mat.skin);
   palm.name = 'palm';
   palm.position.set(0, 0.026, 0);
   palm.castShadow = true;
@@ -144,15 +144,15 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   g.add(palm);
 
   const specs = [
-    [-0.0165, 0.026, 0.0072],
-    [-0.0055, 0.031, 0.0077],
-    [0.0055, 0.029, 0.0074],
-    [0.0160, 0.024, 0.0068],
+    [-0.0185, 0.030, 0.0080],
+    [-0.0062, 0.035, 0.0086],
+    [0.0062, 0.033, 0.0082],
+    [0.0180, 0.027, 0.0075],
   ];
   for (const [x, len, r] of specs) {
     const f = new THREE.Mesh(finger(len, r, curl), A.mat.skin);
     f.name = 'finger';
-    f.position.set(x, 0.047, 0);
+    f.position.set(x, 0.053, 0);
     f.castShadow = true;
     addOutline(f, { thickness: 0.0012 });
     g.add(f);
@@ -198,8 +198,8 @@ export function buildLegs() {
   g.name = 'legs';
 
   const legs = [
-    { side: -1, hip: V3(-0.074, 0.908, 0.004), knee: V3(-0.070, 0.502, 0.014), ankle: V3(-0.066, 0.122, -0.004) },
-    { side: 1, hip: V3(0.076, 0.900, 0.006), knee: V3(0.069, 0.496, 0.022), ankle: V3(0.064, 0.120, 0.010) },
+    { side: -1, hip: V3(-0.074, 0.918, 0.004), knee: V3(-0.070, 0.502, 0.014), ankle: V3(-0.066, 0.122, -0.004) },
+    { side: 1, hip: V3(0.076, 0.910, 0.006), knee: V3(0.069, 0.496, 0.022), ankle: V3(0.064, 0.120, 0.010) },
   ];
 
   for (const leg of legs) {

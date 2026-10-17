@@ -31,7 +31,7 @@ const browser = await puppeteer.launch({
 });
 try {
   const page = await browser.newPage();
-  await page.goto(`${url}?view=${view}&shot=1`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${url}?view=${view}&shot=1&_=${Date.now()}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction('window.__APP_READY__ === true', { timeout: 40000 });
   await sleep(400);
   const res = await page.evaluate((pts, w, h) => {

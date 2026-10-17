@@ -12,6 +12,8 @@ const container = document.getElementById('app');
 function boot() {
   const t0 = performance.now();
   const viewer = new Viewer(container);
+  window.__VIEWER__ = viewer;
+  window.__THREE__ = THREE;
   const ui = initUI(viewer);
 
   ui.setMessage('sculpting the character…');
@@ -60,9 +62,6 @@ function boot() {
   window.addEventListener('resize', () => viewer.resize());
   window.addEventListener('orientationchange', () => setTimeout(() => viewer.resize(), 220));
 
-  // expose for debugging / tooling
-  window.__VIEWER__ = viewer;
-  window.__THREE__ = THREE;
 }
 
 /**
@@ -115,6 +114,21 @@ function applyDebugFlags(character) {
     character.traverse((o) => {
       if (o.isMesh && !o.userData.isOutline) o.material = grey;
     });
+  }
+
+  // ?bg=magenta -> solid chroma-key backdrop with everything except the
+  // character hidden, so the silhouette can be measured exactly.
+  if (q.get('bg') === 'magenta') {
+    const v = window.__VIEWER__;
+    v.scene.background = new THREE.Color(0xff00ff);
+    const hide = [];
+    v.scene.traverse((o) => {
+      if (!o.isMesh) return;
+      let p = o;
+      while (p && p !== character) p = p.parent;
+      if (!p) hide.push(o);
+    });
+    hide.forEach((o) => (o.visible = false));
   }
 }
 
