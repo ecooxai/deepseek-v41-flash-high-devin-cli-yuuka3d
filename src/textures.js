@@ -295,8 +295,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // --- iris ------------------------------------------------------------
   const ix = cx;
   const iy = cy - ry * 0.02;
-  const irx = rx * 0.56;
-  const iry = ry * 0.82;
+  const irx = rx * 0.70;
+  const iry = ry * 0.86;
 
   ctx.save();
   ctx.beginPath();
@@ -327,7 +327,7 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // pupil
   ctx.fillStyle = 'rgba(22,16,46,0.92)';
   ctx.beginPath();
-  ctx.ellipse(ix, iy + iry * 0.06, irx * 0.33, iry * 0.40, 0, 0, Math.PI * 2);
+  ctx.ellipse(ix, iy + iry * 0.08, irx * 0.26, iry * 0.32, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // bottom bounce light
@@ -364,6 +364,16 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   sh.addColorStop(1, 'rgba(58,47,99,0)');
   ctx.fillStyle = sh;
   ctx.fillRect(0, 0, W, H);
+
+  // soften both corners so the sclera never reads as a hard white wedge
+  for (const sx of [-1, 1]) {
+    const cg = ctx.createRadialGradient(cx + sx * rx * 0.92, cy + ry * 0.10, 0, cx + sx * rx * 0.92, cy + ry * 0.10, rx * 0.55);
+    cg.addColorStop(0, 'rgba(96,80,140,0.55)');
+    cg.addColorStop(0.6, 'rgba(120,105,165,0.24)');
+    cg.addColorStop(1, 'rgba(120,105,165,0)');
+    ctx.fillStyle = cg;
+    ctx.fillRect(0, 0, W, H);
+  }
 
   ctx.restore(); // unclip
 

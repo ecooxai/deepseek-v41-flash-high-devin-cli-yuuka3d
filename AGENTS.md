@@ -110,7 +110,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 47 / 1000 · self-assessed **86 / 100**.
+Iteration 53 / 1000 · self-assessed **88 / 100**.
 
 Known weak spots (in priority order):
 
@@ -120,6 +120,7 @@ Known weak spots (in priority order):
    reads from `view=side`.
 3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
 4. The pillow is a rounded slab, not a stitched cushion.
+5. The side profile is nearly all hair; only a sliver of the face reads.
 
 Measurement helpers that proved useful when tuning proportions: render with
 `?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette

@@ -227,7 +227,7 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
     X *= sx;
     Z *= sz;
     // the jaw juts forward, giving the chin its profile
-    Z += 0.10 * Math.pow(u, 1.7);
+    Z += 0.155 * Math.pow(u, 1.7);
     if (z < 0) Z *= 1 - 0.14 * u;
   }
 

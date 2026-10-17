@@ -64,8 +64,8 @@ export function buildHead() {
   /* ----------------------------------------------------------- eyes ---- */
   const eyeTheta = 1.548;
   const eyePhiOff = 0.318;
-  const eyeW = 0.70;
-  const eyeH = 0.575;
+  const eyeW = 0.665;
+  const eyeH = 0.55;
   for (const s of [-1, 1]) {
     const phiC = Math.PI / 2 + s * eyePhiOff;
     const geo = facePatch({
@@ -113,10 +113,10 @@ export function buildHead() {
   g.add(mouth);
 
   /* ----------------------------------------------------------- nose ---- */
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.05, 12, 10), A.mat.skinSoft);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.058, 14, 12), A.mat.skinSoft);
   nose.name = 'nose';
-  headSurface(1.77, Math.PI / 2, R, nose.position);
-  nose.scale.set(0.62, 0.5, 0.8);
+  headSurface(1.78, Math.PI / 2, R * 1.035, nose.position);
+  nose.scale.set(0.66, 0.56, 0.95);
   nose.userData.noOutline = true;
   g.add(nose);
 

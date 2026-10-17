@@ -70,6 +70,11 @@ const tipTaper = (t) => 1 - Math.pow(Math.max(0, (t - 0.90) / 0.10), 1.0);
 const sheetW = (a, b, c) => (t) => (a + b * Math.sin(Math.PI * Math.min(1, t * 1.06)) - c * t * t) * tipTaper(t);
 const sheetT = (a, b) => (t) => (a - b * t) * tipTaper(t);
 
+/** radial swell of the scalp shell, shared with the sheen band */
+function capSwell(front) {
+  return 1.095 + 0.055 * Math.max(0, -front) + 0.030 * Math.max(0, front);
+}
+
 export function buildHair() {
   const g = new THREE.Group();
   g.name = 'hair';
@@ -86,7 +91,7 @@ export function buildHair() {
       const wave = 0.135 * Math.abs(Math.sin((phi - Math.PI / 2) * 11)) * Math.max(0, front);
       const thetaMax = 2.22 - 0.99 * front + wave;
       const theta = 0.004 + v * (thetaMax - 0.004);
-      const swell = 1.095 + 0.055 * Math.max(0, -front) + 0.030 * Math.max(0, front);
+      const swell = capSwell(front);
       headSurface(theta, phi, R * swell, out);
       const yn = out.y / R;
       if (yn > 0) out.y *= 1 + 0.035 * yn;
@@ -183,6 +188,34 @@ export function buildHair() {
     );
   }
 
+  /* ------------------------------------------------------- sheen band -- */
+  // The classic anime hair highlight: a light zig-zag ring where the hair
+  // catches the key light.
+  {
+    const sheenGeo = surfaceShell({
+      uSeg: 150,
+      vSeg: 6,
+      point: (u, v, out) => {
+        const phi = Math.PI / 2 + (u - 0.5) * 3.05;
+        const front = Math.sin(phi);
+        const zig = 0.115 * Math.sin(u * Math.PI * 11) * (0.55 + 0.45 * Math.cos((u - 0.5) * Math.PI));
+        const theta = 0.66 + zig + v * 0.19;
+        headSurface(theta, phi, R * (capSwell(front) + 0.055), out);
+      },
+      uv: (u, v) => [u * 6, v],
+    });
+    paintAlongV(sheenGeo, [
+      [0.0, 0x6d5fb4],
+      [0.45, 0xb9adf0],
+      [1.0, 0x5c4fa4],
+    ], { invert: true });
+    const sheen = new THREE.Mesh(sheenGeo, assets().mat.hair);
+    sheen.name = 'hairSheen';
+    sheen.userData.noOutline = true;
+    sheen.renderOrder = 1;
+    g.add(sheen);
+  }
+
   /* ============================================================= FRINGE = */
   // Locks that lie over the scalp shell; each is solved so its tip lands on a
   // controlled "brow line" just above the eyes rather than at a fixed length.
@@ -191,7 +224,7 @@ export function buildHair() {
     const t = (i / (NB - 1)) * 2 - 1;
     const at = Math.abs(t);
     const j = rnd() - 0.5;
-    const phi0 = Math.PI / 2 + t * 1.20 + 0.025 * j;
+    const phi0 = Math.PI / 2 + t * 1.40 + 0.025 * j;
     const theta0 = 0.10 + 0.54 * Math.pow(at, 1.05);
     const rootR = R * 1.075;
     const root = headSurface(theta0, phi0, rootR);
@@ -200,7 +233,7 @@ export function buildHair() {
     const drop = Math.max(0.03, root.y - browLine);
     const tip = root
       .clone()
-      .addScaledVector(dir, 0.024 + 0.016 * at)
+      .addScaledVector(dir, 0.030 + 0.022 * at)
       .add(new THREE.Vector3(t * 0.020 + 0.006 * j, -drop, 0));
     const p1 = root.clone().lerp(tip, 0.36).addScaledVector(dir, 0.020);
     const p2 = root.clone().lerp(tip, 0.72).addScaledVector(dir, 0.026);
@@ -240,13 +273,13 @@ export function buildHair() {
   /* ========================================================= SIDE LOCKS = */
   for (const s of [-1, 1]) {
     for (let k = 0; k < 3; k++) {
-      const phi0 = Math.PI / 2 + s * (1.12 + k * 0.17 + 0.02 * rnd());
+      const phi0 = Math.PI / 2 + s * (1.34 + k * 0.16 + 0.02 * rnd());
       const theta0 = 0.70 + k * 0.17 + 0.04 * rnd();
       const root = headSurface(theta0, phi0, R * 1.055);
       const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
       const tipY = -0.56 - 0.22 * k - 0.05 * rnd();
-      const tipX = s * (0.104 + 0.046 * k + 0.010 * rnd());
-      const tipZ = 0.022 - 0.030 * k;
+      const tipX = s * (0.096 + 0.044 * k + 0.010 * rnd());
+      const tipZ = -0.004 - 0.032 * k;
       const tip = new THREE.Vector3(tipX, tipY, tipZ);
       const p1 = root.clone().lerp(tip, 0.30).addScaledVector(dir, 0.020);
       p1.z += 0.012;
