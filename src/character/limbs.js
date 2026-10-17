@@ -43,7 +43,7 @@ export const POSE = {
   },
 };
 
-const ARM_RADIUS = profileFn([
+export const ARM_RADIUS = profileFn([
   [0.0, 0.0455],
   [0.16, 0.0420],
   [0.5, 0.0348],

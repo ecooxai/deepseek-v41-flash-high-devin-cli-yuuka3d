@@ -139,6 +139,9 @@ tools/
 * **Check limbs against garments.** The thighs were wider than the shorts at
   the hip, so they punched through as a pale band across the waist. `bbox.mjs`
   showed it immediately.
+* **Close open tubes.** The sleeve's cuff was an open ring, so from three-
+  quarter views the outline shell's interior showed through as a dark flat
+  wedge. Blending the cuff radius down onto the arm closes it.
 * **Turn on `receiveShadow` for the character.** The meshes only cast by
   default, so the cel shading was perfectly flat. Self-shadowing (with
   `normalBias ≈ 0.03`) is what makes the hair read as sitting on the

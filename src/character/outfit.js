@@ -8,7 +8,7 @@ import { assets } from '../assets.js';
 import { addOutline } from '../materials.js';
 import { surfaceShell, bilinearPatch, tubeAlongCurve, curveFromPoints, lerp, smoothstep, TAU } from '../geometry.js';
 import { onTorso, frontDist } from './profile.js';
-import { POSE } from './limbs.js';
+import { POSE, ARM_RADIUS } from './limbs.js';
 
 const SHIRT_TOP = 1.402;
 const SHIRT_BOTTOM = 0.962;
@@ -258,11 +258,14 @@ export function buildOutfit() {
         const B = frames.binormals[i0].clone().lerp(frames.binormals[i1], k).normalize();
         // the cuff sits snug against the arm at the shoulder so the sleeve's
         // open end never shows its hollow interior
-        const r =
+        const rPuffed =
           lerp(0.0432, 0.0355, t) +
           0.0125 * smoothstep(0.0, 0.26, t) +
           0.0095 * v +
           0.046 * Math.pow(v, 3);
+        // Close the cuff down onto the arm at the very end: an open ring shows
+        // the outline shell's interior as a dark flat wedge.
+        const r = lerp(rPuffed, ARM_RADIUS(t) + 0.0015, smoothstep(0.88, 1.0, v));
         out.copy(P).addScaledVector(N, Math.cos(a) * r).addScaledVector(B, Math.sin(a) * r);
       },
       uv: (u, v) => [u * 1.4, v * 1.4],

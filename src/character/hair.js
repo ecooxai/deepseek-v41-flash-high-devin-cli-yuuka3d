@@ -181,9 +181,9 @@ export function buildHair() {
       point: (u, v, out) => {
         const su = u * 2 - 1;
         const as = Math.abs(su);
-        const phi = Math.PI * 1.5 + su * 1.38;
+        const phi = Math.PI * 1.5 + su * 1.62;
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        const root = headSurface(1.10 - 0.22 * as, phi, R * 1.165);
+        const root = headSurface(1.16 - 0.26 * as, phi, R * 1.165);
         const hemR = 0.124 - 0.016 * Math.pow(as, 1.6) + 0.016 * Math.sin(su * 3.1 + 0.7);
         const hemY = HEM_Y + 0.070 * Math.pow(as, 1.7) + 0.048 * Math.sin(su * 4.4 + 1.2);
         const ev = Math.pow(v, 2.1);
@@ -361,7 +361,7 @@ export function buildHair() {
   /* ========================================================= SIDE LOCKS = */
   for (const s of [-1, 1]) {
     for (let k = 0; k < 4; k++) {
-      const phi0 = Math.PI / 2 + s * (1.22 + k * 0.15 + 0.03 * rnd());
+      const phi0 = Math.PI / 2 + s * (1.16 + k * 0.155 + 0.03 * rnd());
       const theta0 = 0.72 + k * 0.14 + 0.05 * rnd();
       const root = headSurface(theta0, phi0, R * 1.155);
       const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
