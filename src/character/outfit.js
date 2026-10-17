@@ -11,7 +11,7 @@ import { onTorso, frontDist } from './profile.js';
 import { POSE } from './limbs.js';
 
 const SHIRT_TOP = 1.402;
-const SHIRT_BOTTOM = 0.955;
+const SHIRT_BOTTOM = 0.918;
 const V_START = 1.252;
 
 /** Gentle cloth ripple so the pyjamas read as soft fabric, not plastic. */
@@ -88,9 +88,9 @@ export function buildOutfit() {
         closed: false,
         flip: sgn > 0,
         point: (u, v, out) => {
-          const y = lerp(1.412, 1.022, v);
+          const y = lerp(1.412, 1.142, v);
           const inner = vHalfAngle(y) + 0.012 + pad;
-          const outer = inner + 0.215 + 0.130 * (1 - v) - pad;
+          const outer = inner + 0.190 + 0.095 * (1 - v) - pad;
           const a = Math.PI / 2 + sgn * lerp(inner, outer, u);
           onTorso(a, y, grow + 0.006 * Math.sin(Math.PI * u), out);
         },

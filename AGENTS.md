@@ -101,8 +101,10 @@ tools/
   surface ends up one flat tone.
 * **Hair lengths are metres from the head centre.** `headSurface` returns
   R-scaled vectors while the tip literals are plain metres, so the two live in
-  the same space — but a tip of `-1.25` hangs to the shin, not the hip. The
-  hem now sits at `HEM_Y = -0.412` (world y ≈ 1.14).
+  the same space. `HEM_Y = -0.98` puts the hem at world y ≈ 0.59 — mid-thigh,
+  which is where the reference's hair actually ends. Measuring this off a
+  downscaled crop is treacherous; measure on the full-resolution image and
+  convert with the foot-to-hair-top distance.
 * **Never straight-`lerp` two points on a sphere.** The chord cuts *inside*
   the surface, so the scalp shell pokes through the fringe. Interpolate the
   polar angle and re-project with `headSurface` (this is what made the fringe
@@ -137,7 +139,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 82 / 1000 · self-assessed **94 / 100**.
+Iteration 83 / 1000 · self-assessed **94 / 100**.
 
 Known weak spots (in priority order):
 
@@ -166,10 +168,10 @@ metre, feet at y = 2033):
 | bow | 1.75 top, ≈ 0.20 wide |
 | eyes | 1.572 |
 | mouth | 1.506 |
-| shirt hem | 0.955 |
+| shirt hem | 0.918 |
 | shorts hem | 0.714 |
-| hair tips | ≈ 1.00 |
-| pillow | 0.84 down to 0.20, ≈ 0.33 wide |
+| hair tips | ≈ 0.59 (mid-thigh) |
+| pillow | 0.71 down to 0.18, ≈ 0.35 wide |
 
 ## Honest ceiling
 

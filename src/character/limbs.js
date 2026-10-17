@@ -263,7 +263,7 @@ export function buildSlippers() {
     foot.rotation.x = -0.03;
 
     // sole
-    const sole = new THREE.Mesh(puffyBox(0.138, 0.042, 0.268, { seg: 12, round: 0.5, bulge: 0.005 }), A.mat.sole);
+    const sole = new THREE.Mesh(puffyBox(0.140, 0.044, 0.272, { seg: 14, round: 0.62, bulge: 0.004 }), A.mat.sole);
     sole.name = 'sole';
     sole.position.set(0, 0.016, 0.014);
     sole.castShadow = true;
@@ -271,7 +271,7 @@ export function buildSlippers() {
     foot.add(sole);
 
     // fluffy upper (open-back mule)
-    const upper = new THREE.Mesh(puffyBox(0.136, 0.112, 0.204, { seg: 14, round: 0.62, bulge: 0.009 }), A.mat.slipper);
+    const upper = new THREE.Mesh(puffyBox(0.140, 0.120, 0.214, { seg: 16, round: 0.74, bulge: 0.006 }), A.mat.slipper);
     upper.name = 'upper';
     upper.position.set(0, 0.058, 0.042);
     upper.castShadow = true;
@@ -279,7 +279,7 @@ export function buildSlippers() {
     foot.add(upper);
 
     // heel cushion
-    const heel = new THREE.Mesh(puffyBox(0.118, 0.090, 0.086, { seg: 10, round: 0.62, bulge: 0.007 }), A.mat.slipper);
+    const heel = new THREE.Mesh(puffyBox(0.122, 0.098, 0.092, { seg: 12, round: 0.72, bulge: 0.005 }), A.mat.slipper);
     heel.name = 'heel';
     heel.position.set(0, 0.048, -0.058);
     heel.userData.noOutline = true;

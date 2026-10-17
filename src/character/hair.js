@@ -119,7 +119,7 @@ export function buildHair() {
   //
   // Lengths are in metres from the head centre, so the hem lands just below
   // the hip (world y ≈ 1.05) the way the reference does.
-  const HEM_Y = -0.566;
+  const HEM_Y = -0.980;
 
   {
     const curtainGeo = surfaceShell({
@@ -134,7 +134,7 @@ export function buildHair() {
         const root = headSurface(1.02 - 0.28 * su * su, phi, R * 1.06);
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
         const ev = Math.pow(v, 1.4);
-        const tipX = dir.x * 0.140;
+        const tipX = dir.x * (0.208 - 0.062 * su * su);
         const tipZ = dir.z * 0.104 - 0.020;
         // The mass stands further off the back than it spreads sideways, so
         // the side profile has depth instead of reading as a flat board.
@@ -158,7 +158,7 @@ export function buildHair() {
 
   // Outer locks: these are what you actually see, so they vary in width and
   // length and sit slightly proud of the curtain.
-  const NL = 9;
+  const NL = 13;
   for (let i = 0; i < NL; i++) {
     const s0 = (i / (NL - 1)) * 2 - 1;
     const as = Math.abs(s0);
@@ -166,8 +166,10 @@ export function buildHair() {
     const phi0 = Math.PI * 1.5 + s0 * 1.28 + 0.055 * j;
     const root = headSurface(1.12 - 0.24 * as + 0.05 * j, phi0, R * 1.10);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const hemY = HEM_Y + 0.022 * Math.sin(i * 1.6 + 0.6) + 0.030 * as + 0.010 * j;
-    const hemR = 0.156 + 0.017 * Math.sin(i * 1.35 + 2.2);
+    // Outer locks end higher and closer in, so the mass tapers to a rounded
+    // silhouette instead of a straight-sided slab.
+    const hemY = HEM_Y + 0.026 * Math.sin(i * 1.6 + 0.6) + 0.185 * Math.pow(as, 1.7) + 0.012 * j;
+    const hemR = 0.234 - 0.098 * Math.pow(as, 1.6) + 0.018 * Math.sin(i * 1.35 + 2.2);
     const tip = new THREE.Vector3(dir.x * hemR, hemY, dir.z * 0.116 - 0.024);
     const p1 = root.clone().lerp(tip, 0.26).addScaledVector(dir, 0.042 + 0.014 * as);
     p1.z += dir.z * 0.030;
@@ -178,9 +180,9 @@ export function buildHair() {
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.076 + 0.018 * as, 0.024, 0.036),
+      sheetW(0.058 + 0.014 * as, 0.018, 0.028),
       sheetT(0.027, 0.016),
-      { segs: 42, radial: 14, stops: i % 2 === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0026 }
+      { segs: 42, radial: 14, stops: i % 2 === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0016 }
     );
   }
 
@@ -214,7 +216,7 @@ export function buildHair() {
     const phi0 = Math.PI * 1.5 + s * 1.3;
     const root = headSurface(1.34, phi0, R * 1.12);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const tip = new THREE.Vector3(dir.x * 0.150, -0.20, dir.z * 0.080 - 0.02);
+    const tip = new THREE.Vector3(dir.x * 0.150, -0.28, dir.z * 0.080 - 0.02);
     const p1 = root.clone().lerp(tip, 0.5).addScaledVector(dir, 0.020);
     addStrand(
       g,
@@ -304,7 +306,7 @@ export function buildHair() {
       const theta0 = 0.72 + k * 0.14 + 0.05 * rnd();
       const root = headSurface(theta0, phi0, R * 1.055);
       const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-      const tipY = -0.30 - 0.085 * k - 0.035 * rnd();
+      const tipY = -0.36 - 0.105 * k - 0.040 * rnd();
       const tipX = s * (0.088 + 0.030 * k + 0.012 * rnd());
       const tipZ = 0.004 - 0.030 * k;
       const tip = new THREE.Vector3(tipX, tipY, tipZ);
@@ -325,7 +327,7 @@ export function buildHair() {
     const phi0 = Math.PI / 2 + s * 0.96;
     const root = headSurface(0.58, phi0, R * 1.075);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const tip = new THREE.Vector3(s * 0.138, -0.60, -0.012);
+    const tip = new THREE.Vector3(s * 0.150, -0.78, -0.012);
     const p1 = root.clone().lerp(tip, 0.22).addScaledVector(dir, 0.026);
     const p2 = root.clone().lerp(tip, 0.52).addScaledVector(dir, 0.020);
     const p3 = root.clone().lerp(tip, 0.80).addScaledVector(dir, 0.008);
