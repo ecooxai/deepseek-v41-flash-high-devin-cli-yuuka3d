@@ -3,6 +3,11 @@
  * and a compact damped orbit camera that works with mouse, touch and pen.
  */
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { BG } from './config.js';
 import { backgroundTexture, contactShadowTexture, floorTexture } from './textures.js';
 
@@ -40,9 +45,42 @@ export class Viewer {
 
     this._buildLights();
     this._buildGround();
+    this._buildComposer();
 
     this._bindInput();
     this.resize();
+  }
+
+  /* ----------------------------------------------------------- post fx */
+  _buildComposer() {
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+    // only the halo is bright enough to bloom
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.22, 0.35, 0.995);
+    this.composer.addPass(this.bloom);
+
+    this.vignette = new ShaderPass({
+      uniforms: {
+        tDiffuse: { value: null },
+        amount: { value: 0.26 },
+        tint: { value: new THREE.Color(0xdfeaf7) },
+      },
+      vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `
+        uniform sampler2D tDiffuse; uniform float amount; uniform vec3 tint;
+        varying vec2 vUv;
+        void main(){
+          vec4 c = texture2D(tDiffuse, vUv);
+          float d = distance(vUv, vec2(0.5));
+          float v = smoothstep(0.28, 0.92, d);
+          c.rgb = mix(c.rgb, tint * c.rgb, v * amount);
+          gl_FragColor = c;
+        }`,
+    });
+    this.composer.addPass(this.vignette);
+    this.composer.addPass(new OutputPass());
+    this.usePost = true;
   }
 
   /* ------------------------------------------------------------ lights */
@@ -223,6 +261,9 @@ export class Viewer {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.composer) {
+      this.composer.setSize(w, h);
+    }
     if (!this.userMoved) this.goal.distance = this.fitDistance();
   }
 
@@ -257,7 +298,8 @@ export class Viewer {
       }
     }
 
-    this.renderer.render(this.scene, this.camera);
+    if (this.usePost) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 
   start() {

@@ -28,12 +28,12 @@ export function buildHalo() {
   const glowMat = new THREE.MeshBasicMaterial({
     color: PALETTE.haloGlow,
     transparent: true,
-    opacity: 0.18,
+    opacity: 0.055,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     toneMapped: false,
   });
-  const glow = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.0135, 12, 72), glowMat);
+  const glow = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.013, 12, 72), glowMat);
   glow.name = 'haloGlow';
   glow.rotation.x = Math.PI / 2;
   glow.userData.noOutline = true;
@@ -87,18 +87,18 @@ export function buildHeadband() {
   for (const s of [-1, 1]) {
     const lobe = new THREE.Mesh(lobeGeo, A.mat.trim);
     lobe.name = 'bowLobe';
-    lobe.scale.set(0.078, 0.049, 0.032);
-    lobe.position.set(s * 0.060, 0.020, 0.002);
-    lobe.rotation.set(0, -s * 0.26, s * 0.40);
+    lobe.scale.set(0.086, 0.050, 0.028);
+    lobe.position.set(s * 0.070, 0.026, -0.002);
+    lobe.rotation.set(0, -s * 0.24, s * 0.52);
     lobe.castShadow = true;
     lobe.userData.noOutline = true;
     bow.add(lobe);
     addOutline(lobe, { thickness: 0.0028, color: 0x9a9abd });
   }
 
-  const knot = new THREE.Mesh(puffyBox(0.036, 0.038, 0.034, { seg: 8, round: 0.5, bulge: 0.005 }), A.mat.trim);
+  const knot = new THREE.Mesh(puffyBox(0.042, 0.044, 0.040, { seg: 12, round: 0.55, bulge: 0.006 }), A.mat.trim);
   knot.name = 'bowKnot';
-  knot.position.set(0, 0.004, 0.010);
+  knot.position.set(0, 0.000, 0.020);
   knot.castShadow = true;
   knot.userData.noOutline = true;
   bow.add(knot);

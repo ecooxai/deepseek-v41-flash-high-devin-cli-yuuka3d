@@ -86,6 +86,9 @@ tools/
 * **Hair strands must close to a point.** `sheetW`/`sheetT` are multiplied by
   `tipTaper` so the swept tube ends in a single vertex — an open tube shows its
   hollow interior.
+* **One curtain, then detail strands.** The back of the hair is a single
+  continuous `surfaceShell` curtain; layering dozens of equal strands instead
+  makes the hem read as a grass skirt rather than drawn hair.
 * **Cel shading.** `toonGradient(steps, softness, floor)` builds the ramp.
   `floor` keeps downward-facing surfaces (jaw, under-chin) from reading grey.
 * Outlines are inverted-hull shells expanded along **vertex normals** in the
@@ -110,7 +113,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 53 / 1000 · self-assessed **88 / 100**.
+Iteration 62 / 1000 · self-assessed **90 / 100**.
 
 Known weak spots (in priority order):
 

@@ -33,6 +33,9 @@ export function initUI(viewer) {
       } else if (b.dataset.toggle === 'spin') {
         viewer.spin = !viewer.spin;
         b.classList.toggle('on', viewer.spin);
+      } else if (b.dataset.toggle === 'fx') {
+        viewer.usePost = !viewer.usePost;
+        b.classList.toggle('on', viewer.usePost);
       }
     });
   }

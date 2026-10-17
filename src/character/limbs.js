@@ -140,7 +140,7 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   palm.name = 'palm';
   palm.position.set(0, 0.026, 0);
   palm.castShadow = true;
-  addOutline(palm, { thickness: 0.0016 });
+  addOutline(palm, { thickness: 0.0013 });
   g.add(palm);
 
   const specs = [
@@ -154,7 +154,7 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
     f.name = 'finger';
     f.position.set(x, 0.053, 0);
     f.castShadow = true;
-    addOutline(f, { thickness: 0.0012 });
+    addOutline(f, { thickness: 0.0010 });
     g.add(f);
   }
 
@@ -170,7 +170,7 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   );
   thumb.name = 'thumb';
   thumb.castShadow = true;
-  addOutline(thumb, { thickness: 0.0012 });
+  addOutline(thumb, { thickness: 0.0010 });
   g.add(thumb);
 
   return g;

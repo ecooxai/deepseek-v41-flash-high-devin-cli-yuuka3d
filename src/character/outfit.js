@@ -11,8 +11,8 @@ import { onTorso, frontDist } from './profile.js';
 import { POSE } from './limbs.js';
 
 const SHIRT_TOP = 1.402;
-const SHIRT_BOTTOM = 0.918;
-const V_START = 1.238;
+const SHIRT_BOTTOM = 0.985;
+const V_START = 1.255;
 
 /** Gentle cloth ripple so the pyjamas read as soft fabric, not plastic. */
 function folds(a, y, amp = 0.0035) {
@@ -130,7 +130,7 @@ export function buildOutfit() {
     closed: false,
     point: (u, v, out) => {
       const a = Math.PI / 2 + (u - 0.5) * 0.115;
-      const y = lerp(0.925, 1.222, v);
+      const y = lerp(0.992, 1.238, v);
       onTorso(a, y, 0.0325, out);
     },
     uv: (u, v) => [u, v * 3],
@@ -141,7 +141,7 @@ export function buildOutfit() {
   g.add(placket);
 
   for (let i = 0; i < 5; i++) {
-    const y = 1.165 - i * 0.057;
+    const y = 1.185 - i * 0.048;
     const btn = new THREE.Mesh(new THREE.SphereGeometry(0.0068, 14, 12), A.mat.button);
     btn.name = 'button';
     onTorso(Math.PI / 2, y, 0.0385, btn.position);
