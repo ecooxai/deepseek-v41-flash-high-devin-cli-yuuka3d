@@ -265,7 +265,25 @@ export function buildPillow() {
   const H = 0.372;
   const D = 0.180;
 
-  const mesh = new THREE.Mesh(pillowGeometry(W, H, D), A.mat.pillow);
+  const pillowGeo = pillowGeometry(W, H, D);
+  // Bake a vertical gradient: the cushion is brightest where the key light
+  // catches its top and cools off toward the underside, like the reference.
+  {
+    const pos = pillowGeo.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    const top = new THREE.Color(0xffffff);
+    const bot = new THREE.Color(0xcfdaf0);
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const t = (pos.getY(i) / (H / 2) + 1) * 0.5;
+      c.copy(bot).lerp(top, Math.pow(Math.max(0, Math.min(1, t)), 0.65));
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+    pillowGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  }
+  const mesh = new THREE.Mesh(pillowGeo, A.mat.pillow);
   mesh.name = 'pillowMesh';
   mesh.castShadow = true;
   addOutline(mesh, { thickness: 0.0026, color: 0x8e94bd });

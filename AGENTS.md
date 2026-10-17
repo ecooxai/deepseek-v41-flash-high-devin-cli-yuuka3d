@@ -179,8 +179,8 @@ Known weak spots (in priority order):
    the side locks read as flat panels from the front.
 2. Hands read as a mitten at close range; the fingers are four swept tubes.
 3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
-4. The pillow is a superellipsoid cushion with a piping seam; it has no
-   gathered corners and its outline is heavier than the painted original.
+4. The pillow is a superellipsoid cushion with a piping seam and a baked
+   vertical gradient, but it has no gathered corner where the hand grips it.
 5. The side profile is nearly all hair; only a sliver of the face reads.
 6. Legs are near-cylindrical — the knee and calf bumps are barely modelled.
 7. The bow reads as a ribbon bow now, but its loops are still solid lobes

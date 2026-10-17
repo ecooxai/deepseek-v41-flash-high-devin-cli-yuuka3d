@@ -63,7 +63,7 @@ export function assets() {
       opacity: 0.55,
       toneMapped: false,
     }),
-    pillow: toon({ color: 0xe9eefc, gradient: tex.gradPillow }),
+    pillow: toon({ color: 0xffffff, vertexColors: true, gradient: tex.gradPillow }),
     eyeL: decal(tex.eyeL),
     eyeR: decal(tex.eyeR),
     brow: decal(tex.brow),
