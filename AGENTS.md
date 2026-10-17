@@ -91,6 +91,23 @@ tools/
 * Outlines are inverted-hull shells expanded along **vertex normals** in the
   vertex shader (`materials.js`), which also works on non-convex shapes.
 
+## Deploying
+
+The repo is public and the built site lives at the repo root
+(`index.html` + `dist/`), so GitHub Pages only needs pointing at the branch:
+
+```bash
+gh api -X POST repos/<owner>/<repo>/pages \
+  -f 'source[branch]=deepseek-v41-flash-high_devin-cli_yuuka3d' -f 'source[path]=/'
+```
+
+> Note: from the container this project was authored in, every
+> `api.github.com/repos/<owner>/<repo>` request returns 404 (the same paths
+> work for other accounts), so Pages could not be enabled programmatically
+> here. Run the command above from an unrestricted machine, or enable Pages in
+> **Settings → Pages** with branch `deepseek-v41-flash-high_devin-cli_yuuka3d`,
+> folder `/`.
+
 ## Status
 
 Iteration 47 / 1000 · self-assessed **86 / 100**.
