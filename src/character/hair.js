@@ -13,28 +13,38 @@ import * as THREE from 'three';
 import { DIMS } from '../config.js';
 import { assets } from '../assets.js';
 import { addOutline } from '../materials.js';
-import { headSurface, hairStrand, curveFromPoints, surfaceShell, paintAlongV, lerp, smoothstep, TAU } from '../geometry.js';
+import { headSurface, hairStrand, curveFromPoints, surfaceShell, paintAlongV, shadeAcrossU, lerp, smoothstep, TAU } from '../geometry.js';
 
 const R = DIMS.headR;
 
 const HAIR_STOPS = [
-  [0.0, 0x514f96],
-  [0.3, 0x6462ac],
-  [0.62, 0x7876c2],
-  [0.86, 0x908edb],
-  [1.0, 0xa5a3ea],
+  [0.0, 0x7876be],
+  [0.3, 0x8c8ad2],
+  [0.62, 0xa09ee4],
+  [0.86, 0xb6b4f0],
+  [1.0, 0xc8c6f8],
 ];
 const HAIR_STOPS_DEEP = [
-  [0.0, 0x403f7a],
-  [0.4, 0x514f92],
-  [0.75, 0x6563ab],
-  [1.0, 0x7d7bc5],
+  [0.0, 0x6967ae],
+  [0.4, 0x7b79c2],
+  [0.75, 0x8f8dd6],
+  [1.0, 0xa5a3e8],
+];
+// The outer locks carry a bright band near the crown — the classic anime
+// hair highlight — so the mass reads as gloss rather than flat colour.
+const HAIR_STOPS_LOCK = [
+  [0.0, 0x7674bc],
+  [0.16, 0x8b89d2],
+  [0.30, 0xc2c0f4],
+  [0.40, 0x9c9ae2],
+  [0.70, 0x8b89c8],
+  [1.0, 0xa9a7e8],
 ];
 const HAIR_STOPS_SHEET = [
-  [0.0, 0x4b4a8c],
-  [0.35, 0x5d5ca4],
-  [0.7, 0x7271bb],
-  [1.0, 0x8d8cd5],
+  [0.0, 0x706eb6],
+  [0.35, 0x8482c8],
+  [0.7, 0x9997da],
+  [1.0, 0xb3b1ee],
 ];
 
 function mulberry32(a) {
@@ -49,16 +59,17 @@ function mulberry32(a) {
 
 const V = (x, y, z) => [x, y, z];
 
-function addStrand(group, pts, widthFn, thickFn, { stops = HAIR_STOPS, segs = 40, radial = 12, outline = 0.0028 } = {}) {
+function addStrand(group, pts, widthFn, thickFn, { stops = HAIR_STOPS, segs = 40, radial = 12, outline = 0.0028, round = 0.22 } = {}) {
   const curve = curveFromPoints(pts, 0.5);
   const geo = hairStrand(curve, widthFn, thickFn, { segs, radial });
   paintAlongV(geo, stops);
+  if (round > 0) shadeAcrossU(geo, { base: 1 - round, gain: round });
   const mesh = new THREE.Mesh(geo, assets().mat.hair);
   mesh.name = 'strand';
   mesh.castShadow = true;
   mesh.userData.noOutline = true;
   group.add(mesh);
-  if (outline > 0) addOutline(mesh, { thickness: outline });
+  if (outline > 0) addOutline(mesh, { thickness: outline, color: 0x3a3870 });
   return mesh;
 }
 
@@ -99,18 +110,18 @@ export function buildHair() {
     uv: (u, v) => [u * 5, v * 3],
   });
   paintAlongV(capGeo, [
-    [0.0, 0x56549b],
-    [0.16, 0x6e6cb6],
-    [0.30, 0x9a98e2],
-    [0.48, 0x6a68b3],
-    [1.0, 0x504e92],
+    [0.0, 0x7b79c4],
+    [0.16, 0x908ed8],
+    [0.30, 0xb9b7f2],
+    [0.48, 0x8d8bd4],
+    [1.0, 0x7472b8],
   ]);
   const cap = new THREE.Mesh(capGeo, assets().mat.hair);
   cap.name = 'hairCap';
   cap.castShadow = true;
   cap.userData.noOutline = true;
   g.add(cap);
-  addOutline(cap, { thickness: 0.0042 });
+  addOutline(cap, { thickness: 0.0028, color: 0x3a3870 });
 
   /* ================================================================ BACK = */
   // Two layers. The inner curtain hugs the head and supplies the mass; the
@@ -133,8 +144,8 @@ export function buildHair() {
         const phi = Math.PI * 1.5 + su * 1.30;
         const root = headSurface(1.02 - 0.28 * su * su, phi, R * 1.06);
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        const ev = Math.pow(v, 1.4);
-        const tipX = dir.x * (0.208 - 0.062 * su * su);
+        const ev = Math.pow(v, 1.7);
+        const tipX = dir.x * (0.188 - 0.056 * su * su);
         const tipZ = dir.z * 0.104 - 0.020;
         // The mass stands further off the back than it spreads sideways, so
         // the side profile has depth instead of reading as a flat board.
@@ -153,36 +164,36 @@ export function buildHair() {
     curtain.castShadow = true;
     curtain.userData.noOutline = true;
     g.add(curtain);
-    addOutline(curtain, { thickness: 0.0032 });
+    addOutline(curtain, { thickness: 0.0022, color: 0x3a3870 });
   }
 
   // Outer locks: these are what you actually see, so they vary in width and
   // length and sit slightly proud of the curtain.
-  const NL = 13;
+  const NL = 9;
   for (let i = 0; i < NL; i++) {
     const s0 = (i / (NL - 1)) * 2 - 1;
     const as = Math.abs(s0);
     const j = rnd() - 0.5;
-    const phi0 = Math.PI * 1.5 + s0 * 1.28 + 0.055 * j;
-    const root = headSurface(1.12 - 0.24 * as + 0.05 * j, phi0, R * 1.10);
+    const phi0 = Math.PI * 1.5 + s0 * 1.30 + 0.045 * j;
+    const root = headSurface(1.12 - 0.24 * as + 0.05 * j, phi0, R * 1.185);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
     // Outer locks end higher and closer in, so the mass tapers to a rounded
     // silhouette instead of a straight-sided slab.
     const hemY = HEM_Y + 0.026 * Math.sin(i * 1.6 + 0.6) + 0.185 * Math.pow(as, 1.7) + 0.012 * j;
-    const hemR = 0.234 - 0.098 * Math.pow(as, 1.6) + 0.018 * Math.sin(i * 1.35 + 2.2);
+    const hemR = 0.212 - 0.088 * Math.pow(as, 1.6) + 0.016 * Math.sin(i * 1.35 + 2.2);
     const tip = new THREE.Vector3(dir.x * hemR, hemY, dir.z * 0.116 - 0.024);
-    const p1 = root.clone().lerp(tip, 0.26).addScaledVector(dir, 0.042 + 0.014 * as);
+    const p1 = root.clone().lerp(tip, 0.24).addScaledVector(dir, 0.028 + 0.010 * as);
     p1.z += dir.z * 0.030;
-    const p2 = root.clone().lerp(tip, 0.60).addScaledVector(dir, 0.048 + 0.022 * as);
+    const p2 = root.clone().lerp(tip, 0.58).addScaledVector(dir, 0.040 + 0.020 * as);
     p2.z += dir.z * 0.045;
     const p3 = root.clone().lerp(tip, 0.86).addScaledVector(dir, 0.026 + 0.020 * as);
     p3.z += dir.z * 0.022;
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.058 + 0.014 * as, 0.018, 0.028),
-      sheetT(0.027, 0.016),
-      { segs: 42, radial: 14, stops: i % 2 === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0016 }
+      sheetW(0.108 + 0.024 * as, 0.030, 0.046),
+      sheetT(0.036, 0.022),
+      { segs: 44, radial: 16, stops: HAIR_STOPS_LOCK, outline: 0.0000, round: 0.42 }
     );
   }
 
@@ -192,7 +203,7 @@ export function buildHair() {
     const as = Math.abs(s0);
     const j = rnd() - 0.5;
     const phi0 = Math.PI * 1.5 + s0 * 1.18 + 0.08 * j;
-    const root = headSurface(0.96 - 0.24 * as, phi0, R * 1.115);
+    const root = headSurface(0.96 - 0.24 * as, phi0, R * 1.205);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
     const tip = new THREE.Vector3(dir.x * 0.206, HEM_Y + 0.045 + 0.04 * as, dir.z * 0.120 - 0.024);
     const p1 = root.clone().lerp(tip, 0.30).addScaledVector(dir, 0.052);
@@ -204,9 +215,9 @@ export function buildHair() {
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.026 + 0.010 * as, 0.012, 0.014),
-      sheetT(0.010, 0.007),
-      { segs: 36, radial: 12, stops: HAIR_STOPS, outline: 0.0022 }
+      sheetW(0.040 + 0.014 * as, 0.016, 0.020),
+      sheetT(0.013, 0.009),
+      { segs: 36, radial: 12, stops: HAIR_STOPS, outline: 0.0006, round: 0.36 }
     );
   }
 
@@ -214,16 +225,16 @@ export function buildHair() {
   for (let i = 0; i < 9; i++) {
     const s = (i / 6) * 2 - 1;
     const phi0 = Math.PI * 1.5 + s * 1.3;
-    const root = headSurface(1.34, phi0, R * 1.12);
+    const root = headSurface(1.34, phi0, R * 1.175);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
     const tip = new THREE.Vector3(dir.x * 0.150, -0.28, dir.z * 0.080 - 0.02);
     const p1 = root.clone().lerp(tip, 0.5).addScaledVector(dir, 0.020);
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.034, 0.016, 0.019),
-      sheetT(0.014, 0.008),
-      { segs: 20, radial: 12, stops: HAIR_STOPS_DEEP, outline: 0.0024 }
+      sheetW(0.048, 0.020, 0.024),
+      sheetT(0.017, 0.010),
+      { segs: 20, radial: 12, stops: HAIR_STOPS_DEEP, outline: 0.0006, round: 0.40 }
     );
   }
 
@@ -256,47 +267,37 @@ export function buildHair() {
   }
 
   /* ============================================================= FRINGE = */
-  // Like the back, the fringe is one continuous sheet with a pointed lower
-  // edge; loose strands are layered on top only for surface detail.
+  // The bangs are drawn as locks radiating from a parting right of centre,
+  // not as one sheet: a single shell can only ever read as a helmet.
   {
-    const fringeGeo = surfaceShell({
-      uSeg: 110,
-      vSeg: 24,
-      closed: false,
-      flip: false,
-      point: (u, v, out) => {
-        const su = u * 2 - 1;
+    const PART = 0.40; // parting position, in `su` units (+1 = viewer's right)
+    const NF = 6;
+    for (let i = 0; i < NF; i++) {
+      const u = i / (NF - 1);
+      const suT = -1.04 + u * 1.62;
+      const thetaT = 1.345 + 0.330 * Math.pow(1 - u, 1.30) + 0.045 * Math.sin(i * 2.3 + 0.4);
+      const pts = [];
+      const n = 8;
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        const su = lerp(PART, suT, Math.pow(t, 1.15));
+        // The locks pull tight at the parting, which is what leaves the
+        // triangle of bare forehead the reference shows there.
+        const thTop = 0.185 + 0.640 * Math.exp(-Math.pow((su - PART) / 0.46, 2));
+        const th = lerp(thTop, thetaT, Math.pow(t, 0.85));
         const phi = Math.PI / 2 + su * 1.15;
-        const front = Math.sin(phi);
-        const r = R * (capSwell(front) + 0.028);
-        const thetaTop = 0.26 + 0.30 * Math.pow(Math.abs(su), 1.1);
-        const root = headSurface(thetaTop, phi, r);
-        // a side-swept bang: the parting sits right of centre, so the locks
-        // are longer on the left and the edge is a soft diagonal
-        // A side-swept bang: the parting sits at the top right, so the locks
-        // get steadily longer toward the left and never peak in the middle
-        // (a mid-fringe peak reads as a "V" cut out of the forehead).
-        const tipTheta =
-          1.442 - 0.104 * su + 0.046 * Math.sin(su * 2.6 + 0.50) + 0.028 * Math.sin(su * 7.2 + 1.1);
-        const tip = headSurface(tipTheta, phi, r + R * 0.012);
-        const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        out.lerpVectors(root, tip, v);
-        out.addScaledVector(dir, 0.022 * Math.sin(Math.PI * v));
-      },
-      uv: (u, v) => [u * 4, v * 2],
-    });
-    paintAlongV(fringeGeo, [
-      [0.0, 0x56549c],
-      [0.35, 0x6d6bba],
-      [0.72, 0x8886d6],
-      [1.0, 0xa3a1ec],
-    ]);
-    const fringe = new THREE.Mesh(fringeGeo, assets().mat.hair);
-    fringe.name = 'hairFringe';
-    fringe.castShadow = true;
-    fringe.userData.noOutline = true;
-    g.add(fringe);
-    addOutline(fringe, { thickness: 0.0030 });
+        const r = R * (capSwell(Math.sin(phi)) + 0.030 + 0.012 * Math.sin(Math.PI * t));
+        const pt = headSurface(th, phi, r);
+        pts.push([pt.x, pt.y, pt.z]);
+      }
+      addStrand(g, pts, sheetW(0.034, 0.017, 0.023), sheetT(0.012, 0.007), {
+        segs: 34,
+        radial: 12,
+        stops: i % 2 === 0 ? HAIR_STOPS_LOCK : HAIR_STOPS,
+        outline: 0.0010,
+        round: 0.26,
+      });
+    }
   }
 
   /* ========================================================= SIDE LOCKS = */
@@ -304,7 +305,7 @@ export function buildHair() {
     for (let k = 0; k < 4; k++) {
       const phi0 = Math.PI / 2 + s * (1.30 + k * 0.13 + 0.03 * rnd());
       const theta0 = 0.72 + k * 0.14 + 0.05 * rnd();
-      const root = headSurface(theta0, phi0, R * 1.055);
+      const root = headSurface(theta0, phi0, R * 1.185);
       const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
       const tipY = -0.36 - 0.105 * k - 0.040 * rnd();
       const tipX = s * (0.088 + 0.030 * k + 0.012 * rnd());
@@ -319,13 +320,13 @@ export function buildHair() {
         [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
         sheetW(0.030, 0.016, 0.019),
         sheetT(0.015, 0.010),
-        { segs: 34, radial: 14, stops: k === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0028 }
+        { segs: 34, radial: 14, stops: k === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0006, round: 0.38 }
       );
     }
 
     // one extra-long lock falling in front of the shoulder
     const phi0 = Math.PI / 2 + s * 0.96;
-    const root = headSurface(0.58, phi0, R * 1.075);
+    const root = headSurface(0.58, phi0, R * 1.195);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
     const tip = new THREE.Vector3(s * 0.150, -0.78, -0.012);
     const p1 = root.clone().lerp(tip, 0.22).addScaledVector(dir, 0.026);
@@ -336,7 +337,7 @@ export function buildHair() {
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
       sheetW(0.040, 0.020, 0.024),
       sheetT(0.016, 0.011),
-      { segs: 34, radial: 14, stops: HAIR_STOPS, outline: 0.0028 }
+      { segs: 34, radial: 14, stops: HAIR_STOPS, outline: 0.0006, round: 0.38 }
     );
   }
 

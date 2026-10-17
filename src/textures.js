@@ -263,13 +263,16 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
 
   // --- eye socket / sclera -------------------------------------------
   // Upper lid is a fairly flat arch (relaxed, slightly sleepy look).
+  // The outer corner sits lower than the inner one, which is what gives an
+  // anime eye its tilt.
+  const outer = lashSide > 0 ? 1 : 0;
   const lid = (t) => ({
     x: cx + (t * 2 - 1) * rx,
-    y: cy - ry * (0.46 + 0.42 * Math.sin(Math.PI * t) ** 0.55),
+    y: cy - ry * (0.44 + 0.44 * Math.sin(Math.PI * t) ** 0.55) + 0.17 * ry * (t - outer),
   });
   const low = (t) => ({
     x: cx + (t * 2 - 1) * rx * 0.93,
-    y: cy + ry * (0.72 - 0.36 * Math.sin(Math.PI * t) ** 0.7),
+    y: cy + ry * (0.70 - 0.34 * Math.sin(Math.PI * t) ** 0.7) + 0.10 * ry * (t - outer),
   });
 
   ctx.beginPath();
@@ -306,10 +309,10 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   ctx.clip();
 
   const ig = ctx.createLinearGradient(0, iy - iry, 0, iy + iry);
-  ig.addColorStop(0.0, '#3a3272');
-  ig.addColorStop(0.30, '#5c53ae');
-  ig.addColorStop(0.62, hex(PALETTE.eyeIris));
-  ig.addColorStop(1.0, '#c3baf5');
+  ig.addColorStop(0.0, '#2b2460');
+  ig.addColorStop(0.30, '#463d94');
+  ig.addColorStop(0.62, '#6a5fc0');
+  ig.addColorStop(1.0, '#bdb4f2');
   ctx.fillStyle = ig;
   ctx.fillRect(ix - irx, iy - iry, irx * 2, iry * 2);
 
@@ -340,8 +343,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   ctx.fillRect(ix - irx, iy, irx * 2, iry);
 
   // dark rim
-  ctx.strokeStyle = 'rgba(30,23,64,0.85)';
-  ctx.lineWidth = W * 0.020;
+  ctx.strokeStyle = 'rgba(26,20,58,0.92)';
+  ctx.lineWidth = W * 0.028;
   ctx.beginPath();
   ctx.ellipse(ix, iy, irx, iry, 0, 0, Math.PI * 2);
   ctx.stroke();
@@ -351,7 +354,7 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // --- highlights ------------------------------------------------------
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(ix - irx * 0.42, iy - iry * 0.44, irx * 0.34, iry * 0.26, -0.5, 0, Math.PI * 2);
+  ctx.ellipse(ix - irx * 0.40, iy - iry * 0.42, irx * 0.40, iry * 0.30, -0.5, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(255,255,255,0.97)';
   ctx.fill();
   ctx.restore();
@@ -388,10 +391,10 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
     const p = lid(i / N);
     i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
   }
-  ctx.lineWidth = W * 0.036;
+  ctx.lineWidth = W * 0.064;
   ctx.stroke();
   // crisp inner edge
-  ctx.lineWidth = W * 0.016;
+  ctx.lineWidth = W * 0.026;
   ctx.strokeStyle = '#2b2354';
   ctx.stroke();
   ctx.restore();

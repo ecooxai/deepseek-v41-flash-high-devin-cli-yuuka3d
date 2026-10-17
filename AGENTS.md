@@ -119,6 +119,16 @@ tools/
   tune.
 * `tools/bbox.mjs` prints the world bounding box of every named part — it is
   how the over-long hair hem was found.
+* **Root strands *outside* the scalp shell.** The scalp sits at
+  `R * capSwell` (1.10–1.15 R). Locks rooted below that are buried inside it,
+  which is what made the hair read as a smooth helmet for so long.
+* **Colour-match by sampling, not by eye.** The hair ramps were producing
+  `#6360a0` against the reference's `#7d7bb5`, and the skin `#dec8cb` against
+  `#fdf6f4`. `magick <img> -format '%[pixel:p{x,y}]' info:` on both images
+  settles it in one command.
+* **A flat lock is lit as one plane.** `shadeAcrossU` fades the vertex colour
+  toward the ribbon's thin edges so the same geometry reads as a rounded
+  strand.
 * **Cel shading.** `toonGradient(steps, softness, floor)` builds the ramp.
   `floor` keeps downward-facing surfaces (jaw, under-chin) from reading grey.
 * Outlines are inverted-hull shells expanded along **vertex normals** in the
@@ -143,7 +153,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 85 / 1000 · self-assessed **94 / 100**.
+Iteration 90 / 1000 · self-assessed **96 / 100**.
 
 Known weak spots (in priority order):
 

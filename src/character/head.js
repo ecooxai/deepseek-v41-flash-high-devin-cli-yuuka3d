@@ -63,9 +63,9 @@ export function buildHead() {
 
   /* ----------------------------------------------------------- eyes ---- */
   const eyeTheta = 1.745;
-  const eyePhiOff = 0.276;
-  const eyeW = 0.560;
-  const eyeH = 0.462;
+  const eyePhiOff = 0.292;
+  const eyeW = 0.645;
+  const eyeH = 0.432;
   for (const s of [-1, 1]) {
     const phiC = Math.PI / 2 + s * eyePhiOff;
     const geo = facePatch({

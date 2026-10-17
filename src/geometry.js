@@ -222,7 +222,7 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
   if (y < 0) {
     const u = Math.min(1, -y);
     // slim, smoothly tapering jaw — the anime chin
-    const sx = 1 - 0.47 * Math.pow(u, 1.05);
+    const sx = 1 - 0.52 * Math.pow(u, 1.02);
     const sz = 1 - 0.28 * Math.pow(u, 1.45);
     X *= sx;
     Z *= sz;
@@ -243,7 +243,7 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
   X *= 1 - 0.030 * cheek;
 
   // overall: an anime head is a narrow oval, not a ball
-  X *= 0.79;
+  X *= 0.75;
 
   return out.set(X, Yy, Z);
 }
@@ -395,6 +395,27 @@ export function paintAlongV(geo, stops, { gamma = 1, invert = false } = {}) {
     colors[i * 3 + 2] = c.b;
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  return geo;
+}
+
+/**
+ * Multiply a baked vertex-colour ramp by a cross-section falloff.
+ *
+ * A flat lock is lit as one plane, which reads as a cardboard panel. Fading
+ * the colour toward the ribbon's thin edges makes the same geometry read as a
+ * rounded strand. `hairStrand` puts `u = 0` on the outward face and `u = 0.25
+ * / 0.75` on the edges.
+ */
+export function shadeAcrossU(geo, { base = 0.66, gain = 0.34, phase = 0 } = {}) {
+  const uv = geo.attributes.uv;
+  const col = geo.attributes.color;
+  if (!col || !uv) return geo;
+  for (let i = 0; i < col.count; i++) {
+    const u = uv.getX(i);
+    const f = base + gain * Math.max(0, Math.cos((u + phase) * TAU));
+    col.setXYZ(i, col.getX(i) * f, col.getY(i) * f, col.getZ(i) * f);
+  }
+  col.needsUpdate = true;
   return geo;
 }
 

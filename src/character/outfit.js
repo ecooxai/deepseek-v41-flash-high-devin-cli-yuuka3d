@@ -88,9 +88,9 @@ export function buildOutfit() {
         closed: false,
         flip: sgn > 0,
         point: (u, v, out) => {
-          const y = lerp(1.412, 1.142, v);
+          const y = lerp(1.412, 1.126, v);
           const inner = vHalfAngle(y) + 0.012 + pad;
-          const outer = inner + 0.190 + 0.095 * (1 - v) - pad;
+          const outer = inner + 0.255 + 0.130 * (1 - v) - pad;
           const a = Math.PI / 2 + sgn * lerp(inner, outer, u);
           onTorso(a, y, grow + 0.006 * Math.sin(Math.PI * u), out);
         },
@@ -247,7 +247,7 @@ export function buildOutfit() {
       point: (u, v, out) => {
         const a = u * TAU;
         const scallop = 0.055 * Math.abs(Math.sin(3.2 * a));
-        const tEnd = 0.330 + scallop * 0.62;
+        const tEnd = 0.365 + scallop * 0.66;
         const t = lerp(0.0, tEnd, v);
         const f = t * segs;
         const i0 = Math.min(segs, Math.floor(f));
@@ -261,8 +261,8 @@ export function buildOutfit() {
         const r =
           lerp(0.0432, 0.0355, t) +
           0.0125 * smoothstep(0.0, 0.26, t) +
-          0.0060 * v +
-          0.016 * Math.pow(v, 3);
+          0.0080 * v +
+          0.034 * Math.pow(v, 3);
         out.copy(P).addScaledVector(N, Math.cos(a) * r).addScaledVector(B, Math.sin(a) * r);
       },
       uv: (u, v) => [u * 1.4, v * 1.4],

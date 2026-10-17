@@ -29,9 +29,9 @@ function profileFn(points) {
 export const POSE = {
   armRaised: {
     side: -1,
-    points: [V3(-0.114, 1.372, 0.004), V3(-0.222, 1.286, 0.016), V3(-0.276, 1.214, 0.026), V3(-0.228, 1.348, 0.050), V3(-0.176, 1.470, 0.060)],
-    wrist: V3(-0.158, 1.508, 0.054),
-    handDir: V3(0.26, 0.92, 0.30).normalize(),
+    points: [V3(-0.114, 1.372, 0.004), V3(-0.214, 1.290, 0.016), V3(-0.262, 1.218, 0.028), V3(-0.220, 1.362, 0.052), V3(-0.170, 1.492, 0.060)],
+    wrist: V3(-0.150, 1.572, 0.052),
+    handDir: V3(0.34, 0.86, 0.38).normalize(),
     palmNormal: V3(0.30, -0.10, 0.95).normalize(),
   },
   armDown: {
@@ -56,14 +56,15 @@ const LEG_RADIUS = profileFn([
   [0.0, 0.0820],
   [0.10, 0.0788],
   [0.26, 0.0655],
-  [0.38, 0.0505],
-  [0.46, 0.0432],
-  [0.52, 0.0552],
-  [0.60, 0.0540],
-  [0.70, 0.0452],
-  [0.82, 0.0330],
-  [0.92, 0.0296],
-  [1.0, 0.0276],
+  [0.38, 0.0492],
+  [0.46, 0.0408],
+  [0.50, 0.0520],
+  [0.56, 0.0604],
+  [0.64, 0.0540],
+  [0.74, 0.0416],
+  [0.84, 0.0312],
+  [0.93, 0.0272],
+  [1.0, 0.0252],
 ]);
 
 /* ---------------------------------------------------------------- neck -- */
@@ -220,8 +221,8 @@ export function buildLegs() {
   // a relaxed contrapposto: the near leg carries the weight, the far leg
   // steps slightly forward — straight parallel tubes read as mannequin legs
   const legs = [
-    { side: -1, hip: V3(-0.078, 0.918, -0.006), knee: V3(-0.074, 0.502, -0.022), ankle: V3(-0.070, 0.122, -0.034) },
-    { side: 1, hip: V3(0.080, 0.910, 0.010), knee: V3(0.073, 0.496, 0.038), ankle: V3(0.068, 0.120, 0.028) },
+    { side: -1, hip: V3(-0.078, 0.918, -0.012), knee: V3(-0.077, 0.498, -0.030), ankle: V3(-0.073, 0.120, -0.044) },
+    { side: 1, hip: V3(0.080, 0.906, 0.014), knee: V3(0.078, 0.494, 0.066), ankle: V3(0.066, 0.116, 0.050) },
   ];
 
   for (const leg of legs) {
@@ -258,8 +259,8 @@ export function buildSlippers() {
   for (const s of [-1, 1]) {
     const foot = new THREE.Group();
     foot.name = 'slipper';
-    foot.position.set(s * 0.069 + (s > 0 ? 0 : 0.0), 0, s > 0 ? 0.040 : -0.022);
-    foot.rotation.y = -s * 0.18;
+    foot.position.set(s < 0 ? -0.072 : 0.066, 0, s < 0 ? -0.040 : 0.050);
+    foot.rotation.y = -s * (s > 0 ? 0.34 : 0.16);
     foot.rotation.x = -0.03;
 
     // sole
@@ -288,7 +289,7 @@ export function buildSlippers() {
     // pink bow
     const bow = new THREE.Group();
     bow.name = 'slipperBow';
-    bow.position.set(0, 0.098, 0.070);
+    bow.position.set(0, 0.122, 0.100);
     for (const k of [-1, 1]) {
       const loop = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 12), A.mat.bowPink);
       loop.scale.set(1.0, 0.62, 0.72);

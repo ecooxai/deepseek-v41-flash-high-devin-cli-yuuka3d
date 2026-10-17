@@ -63,17 +63,19 @@ export function buildHeadband() {
       const phi = u * TAU;
       const front = Math.max(0, Math.sin(phi));
       const away = 1 - front;
-      // A folded cloth tied over the crown: its front edge sits at the
-      // hairline so the bangs hang out from under it, and it drops to ear
-      // level at the sides.
-      const thetaTop = 0.140 + 0.060 * front + 0.020 * Math.sin(phi * 7);
+      // A white hood knotted at the crown: it stops above the brow at the
+      // front (the forehead is bare in the reference) and drops past the ears
+      // at the sides and back.
+      const thetaTop = 0.110 + 0.060 * front + 0.012 * Math.sin(phi * 3);
       const thetaBot =
-        0.840 + 0.520 * Math.abs(Math.cos(phi)) + 0.320 * Math.max(0, -Math.sin(phi)) +
-        0.030 * Math.sin(phi * 5 + 1.1);
+        0.505 + 1.240 * Math.abs(Math.cos(phi)) + 0.960 * Math.max(0, -Math.sin(phi)) +
+        0.020 * Math.sin(phi * 3 + 1.1);
       const theta = lerp(thetaTop, thetaBot, v);
       // sits *inside* the fringe at the brow (so the bangs hide it) and
       // swells past the hair as it swings round to the sides and back
-      const rad = R * (1.196 + 0.024 * Math.sin(Math.PI * v) + 0.010 * Math.sin(phi * 9));
+      // Hidden behind the hair at the brow, visible past it at the sides
+      // and back — the hood is a mass *around* the head, not a cap on top.
+      const rad = R * (1.172 + 0.150 * Math.pow(away, 1.15) + 0.024 * Math.sin(Math.PI * v));
       headSurface(theta, phi, rad, out);
       return out;
     },
@@ -99,20 +101,39 @@ export function buildHeadband() {
   bow.position.set(-0.012, R * 1.055, 0.036);
   bow.rotation.set(-0.66, 0.10, 0.12);
 
+  // Each loop is a solid ribbon blade sweeping up and out from the knot,
+  // tapering to a point — the way a tied bow is actually drawn. Sweeping a
+  // flat ribbon around a closed path instead leaves a hole and reads as a
+  // pair of doughnuts.
   for (const s of [-1, 1]) {
+    const blade = curveFromPoints(
+      [
+        [0, 0.004, 0.002],
+        [s * 0.030, 0.020, -0.004],
+        [s * 0.062, 0.040, -0.009],
+        [s * 0.088, 0.056, -0.012],
+      ],
+      0.5
+    );
     const loop = new THREE.Mesh(
-      ribbonLoop(s, { cx: 0.054, cy: 0.024, rx: 0.032, ry: 0.042, w: 0.0230, thick: 0.0046 }),
+      hairStrand(
+        blade,
+        (t) => 0.010 + 0.044 * Math.sin(Math.PI * Math.min(1, t * 1.06)) - 0.023 * t * t,
+        (t) => 0.0062 - 0.0030 * t,
+        { segs: 30, radial: 12 }
+      ),
       bandMat
     );
     loop.name = 'bowLoop';
-    loop.rotation.z = s * 0.24;
+    loop.rotation.z = s * 0.10;
     loop.castShadow = true;
     loop.userData.noOutline = true;
     bow.add(loop);
-    addOutline(loop, { thickness: 0.0026, color: 0x9a9abd });
+    addOutline(loop, { thickness: 0.0024, color: 0x9a9abd });
   }
 
-  const knot = new THREE.Mesh(puffyBox(0.024, 0.024, 0.019, { seg: 12, round: 0.55, bulge: 0.003 }), A.mat.trim);
+  const knot = new THREE.Mesh(puffyBox(0.028, 0.024, 0.019, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
+  knot.position.set(0, 0.006, 0.006);
   knot.name = 'bowKnot';
   knot.castShadow = true;
   knot.userData.noOutline = true;
@@ -186,8 +207,8 @@ export function pillowGeometry(w, h, d) {
   // A superellipsoid rather than a spherified cube: the cube's six patches
   // leave visible panel creases across the cushion's face.
   const sp = (a, e) => Math.sign(a) * Math.pow(Math.abs(a), e);
-  const OUTLINE_E = 0.40; // in-plane exponent → rounded rectangle
-  const POLE_E = 0.36; // axial exponent → flatter front and back
+  const OUTLINE_E = 0.30; // in-plane exponent → rounded rectangle
+  const POLE_E = 0.28; // axial exponent → flatter front and back
 
   // Weld the poles: `surfaceShell` leaves uSeg coincident vertices at each
   // pole, each with its own normal, which fans out into a visible pinwheel.
@@ -233,12 +254,12 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.232, 0.470, 0.058);
-  g.rotation.set(-0.05, 0.22, -0.56);
+  g.position.set(0.226, 0.492, 0.034);
+  g.rotation.set(-0.06, 0.30, -0.44);
 
-  const W = 0.300;
-  const H = 0.438;
-  const D = 0.204;
+  const W = 0.302;
+  const H = 0.410;
+  const D = 0.196;
 
   const mesh = new THREE.Mesh(pillowGeometry(W, H, D), A.mat.pillow);
   mesh.name = 'pillowMesh';
