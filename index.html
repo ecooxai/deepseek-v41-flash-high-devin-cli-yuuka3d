@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#cfe4f7" />
+    <title>Yuuka · Pajama Ver. — DeepSeek V4.1 Flash High</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%234a3f78'/><circle cx='16' cy='16' r='7' fill='none' stroke='%2323252f' stroke-width='3'/></svg>" />
+    <style>
+      :root {
+        --ui-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --ink: #2b2a3d;
+        --ink-soft: #5b5a75;
+        --glass: rgba(255, 255, 255, 0.62);
+        --glass-line: rgba(255, 255, 255, 0.85);
+        --shadow: 0 8px 30px rgba(60, 70, 120, 0.18);
+        --accent: #6f60ad;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #cfe4f7;
+        font-family: var(--ui-font);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+      }
+      #app { position: fixed; inset: 0; }
+      canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+      /* ---------- overlay ---------- */
+      .hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+      .hud > * { pointer-events: auto; }
+
+      .panel {
+        background: var(--glass);
+        border: 1px solid var(--glass-line);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px) saturate(1.25);
+        -webkit-backdrop-filter: blur(14px) saturate(1.25);
+      }
+
+      /* model credit — sits ABOVE the 3D model on screen */
+      #credit {
+        position: absolute;
+        top: max(10px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 15px;
+        white-space: nowrap;
+        user-select: none;
+      }
+      #credit .dot {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: linear-gradient(140deg, #8f7fe0, #4a3f78);
+        box-shadow: 0 0 0 2px rgba(255,255,255,.8), 0 0 10px rgba(111,96,173,.7);
+        flex: none;
+      }
+      #credit .model { font-weight: 700; font-size: 14px; letter-spacing: .2px; }
+      #credit .sep { color: #b9b7cc; font-size: 12px; }
+      #credit .tool { font-size: 12px; color: var(--ink-soft); }
+      #credit .subject { font-size: 12px; color: var(--ink-soft); }
+
+      /* subject title bottom-left */
+      #title { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); padding: 10px 14px; max-width: 46vw; }
+      #title h1 { margin: 0; font-size: 15px; letter-spacing: .2px; }
+      #title p { margin: 3px 0 0; font-size: 11px; color: var(--ink-soft); line-height: 1.45; }
+
+      /* controls bottom-center */
+      #controls { position: absolute; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; }
+      #controls button {
+        font: inherit; font-size: 12px; font-weight: 600; color: var(--ink);
+        background: transparent; border: 0; border-radius: 9px; padding: 7px 11px;
+        cursor: pointer; transition: background .15s ease, color .15s ease;
+        white-space: nowrap;
+      }
+      #controls button:hover { background: rgba(111, 96, 173, 0.14); }
+      #controls button.on { background: linear-gradient(140deg, #7d6dc8, #5a4d97); color: #fff; }
+
+      /* iteration + score bottom-right */
+      #score {
+        position: absolute;
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        padding: 9px 14px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        user-select: none;
+      }
+      #score .iter { font-size: 11px; color: var(--ink-soft); letter-spacing: .3px; }
+      #score .iter b { color: var(--ink); font-size: 13px; }
+      #score .val { font-size: 21px; font-weight: 800; line-height: 1.1; letter-spacing: -.3px; }
+      #score .val .max { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+      #score .bar { margin-top: 5px; width: 100%; height: 5px; border-radius: 3px; background: rgba(90, 90, 130, .18); overflow: hidden; }
+      #score .bar i { display: block; height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg, #8f7fe0, #5a4d97); transition: width .5s ease; }
+
+      /* loading */
+      #loading { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: linear-gradient(180deg, #eaf4ff, #c9e0f6); transition: opacity .6s ease; }
+      #loading.hide { opacity: 0; pointer-events: none; }
+      #loading .box { text-align: center; }
+      #loading .ring { width: 42px; height: 42px; margin: 0 auto 14px; border-radius: 50%; border: 3px solid rgba(111,96,173,.25); border-top-color: #6f60ad; animation: spin 1s linear infinite; }
+      #loading .msg { font-size: 12px; color: #4c4b66; letter-spacing: .4px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* touch hints for small screens */
+      @media (max-width: 640px) {
+        #credit { padding: 6px 11px; gap: 7px; }
+        #credit .model { font-size: 12px; }
+        #credit .tool, #credit .subject, #credit .sep { display: none; }
+        #title { max-width: 40vw; padding: 8px 10px; }
+        #title h1 { font-size: 12.5px; }
+        #title p { font-size: 10px; }
+        #controls { padding: 4px; gap: 2px; }
+        #controls button { padding: 6px 8px; font-size: 11px; }
+        #score { padding: 7px 11px; }
+        #score .val { font-size: 18px; }
+      }
+      @media (max-width: 460px) {
+        #title p { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div class="hud">
+      <div id="credit" class="panel">
+        <span class="dot"></span>
+        <span class="model">DeepSeek V4.1 Flash High</span>
+        <span class="sep">·</span>
+        <span class="tool">Devin CLI · three.js</span>
+        <span class="sep">·</span>
+        <span class="subject">Yuuka — Pajama Ver.</span>
+      </div>
+
+      <div id="title" class="panel">
+        <h1>Yuuka · Pajama Ver.</h1>
+        <p>Procedural 3D character — 100% built from scratch, no external assets.</p>
+      </div>
+
+      <div id="controls" class="panel">
+        <button data-view="front" class="on">Front</button>
+        <button data-view="threeq">3/4</button>
+        <button data-view="side">Side</button>
+        <button data-view="back">Back</button>
+        <button data-view="face">Face</button>
+        <button data-toggle="spin" class="on">Spin</button>
+      </div>
+
+      <div id="score" class="panel">
+        <div class="iter">ITERATION <b id="iterNum">1</b> / <span id="iterMax">1000</span></div>
+        <div class="val"><span id="scoreVal">0</span><span class="max">/100</span></div>
+        <div class="bar"><i id="scoreBar"></i></div>
+      </div>
+    </div>
+
+    <div id="loading">
+      <div class="box">
+        <div class="ring"></div>
+        <div class="msg" id="loadingMsg">building geometry…</div>
+      </div>
+    </div>
+
+    <script src="./dist/main.js"></script>
+  </body>
+</html>
