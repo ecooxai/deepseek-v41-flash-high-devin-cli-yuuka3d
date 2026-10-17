@@ -143,7 +143,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 84 / 1000 · self-assessed **94 / 100**.
+Iteration 85 / 1000 · self-assessed **94 / 100**.
 
 Known weak spots (in priority order):
 
@@ -155,7 +155,8 @@ Known weak spots (in priority order):
    gathered corners and its outline is heavier than the painted original.
 5. The side profile is nearly all hair; only a sliver of the face reads.
 6. Legs are near-cylindrical — the knee and calf bumps are barely modelled.
-7. The bow's loops merge into a blob at some angles.
+7. The bow reads as a ribbon bow now, but its loops are still solid lobes
+   rather than folded cloth.
 
 Measurement helpers that proved useful when tuning proportions: render with
 `?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette

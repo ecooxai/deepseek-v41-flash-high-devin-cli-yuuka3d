@@ -7,7 +7,7 @@ export const META = {
   model: 'DeepSeek V4.1 Flash High',
   tool: 'Devin CLI · three.js',
   subject: 'Yuuka — Pajama Ver.',
-  iteration: 84,
+  iteration: 85,
   maxIterations: 1000,
   score: 94,
 };

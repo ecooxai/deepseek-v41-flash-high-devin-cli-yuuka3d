@@ -22,7 +22,7 @@ export function buildHalo() {
   const g = new THREE.Group();
   g.name = 'halo';
   g.position.set(0, DIMS.headC + R * 1.87, -0.020);
-  g.rotation.set(0.11, 0, 0.05);
+  g.rotation.set(0.225, 0, 0.05);
 
   // A thin, wide band seen almost edge-on — the reference halo is a flat
   // hoop, not a fat donut, so the tube stays small against a large radius.
@@ -101,11 +101,11 @@ export function buildHeadband() {
 
   for (const s of [-1, 1]) {
     const loop = new THREE.Mesh(
-      ribbonLoop(s, { cx: 0.050, cy: 0.026, rx: 0.030, ry: 0.044, w: 0.0225, thick: 0.0058 }),
+      ribbonLoop(s, { cx: 0.054, cy: 0.024, rx: 0.032, ry: 0.042, w: 0.0230, thick: 0.0046 }),
       bandMat
     );
     loop.name = 'bowLoop';
-    loop.rotation.z = s * 0.46;
+    loop.rotation.z = s * 0.24;
     loop.castShadow = true;
     loop.userData.noOutline = true;
     bow.add(loop);
