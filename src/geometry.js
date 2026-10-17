@@ -243,7 +243,7 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
   X *= 1 - 0.030 * cheek;
 
   // overall: an anime head is a narrow oval, not a ball
-  X *= 0.75;
+  X *= 0.72;
 
   return out.set(X, Yy, Z);
 }

@@ -129,6 +129,16 @@ tools/
 * **A flat lock is lit as one plane.** `shadeAcrossU` fades the vertex colour
   toward the ribbon's thin edges so the same geometry reads as a rounded
   strand.
+* **Bake fine strand detail into a texture, not into geometry.** The hair mass
+  is one ridged `surfaceShell` wearing `hairStrandTexture()` — a tiling canvas
+  of soft grooves. That reads as strands at every distance for a fraction of
+  the triangles that hundreds of swept locks would cost.
+* **Procedural print must wrap exactly once.** The garments map uv as
+  `u * 2.2, v * 2.2`, so the fabric texture repeats `1 / 2.2` times; any other
+  repeat slices the motifs at the surface seam.
+* **Check limbs against garments.** The thighs were wider than the shorts at
+  the hip, so they punched through as a pale band across the waist. `bbox.mjs`
+  showed it immediately.
 * **Cel shading.** `toonGradient(steps, softness, floor)` builds the ramp.
   `floor` keeps downward-facing surfaces (jaw, under-chin) from reading grey.
 * Outlines are inverted-hull shells expanded along **vertex normals** in the

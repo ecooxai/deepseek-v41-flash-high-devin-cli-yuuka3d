@@ -1,0 +1,13 @@
+import { spawn } from 'node:child_process';
+import puppeteer from 'puppeteer-core';
+const CHROME = '/home/a/.local/archpkg/pacman/usr/bin/chromium';
+const DISPLAY = ':95';
+const xvfb = spawn('Xvfb', [DISPLAY, '-screen', '0', '900x700x24', '-nolisten', 'tcp'], { stdio: 'ignore' });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+await sleep(600);
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: false, env: { ...process.env, DISPLAY }, args: ['--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'], defaultViewport: { width: 900, height: 700 } });
+const page = await browser.newPage();
+await page.goto('http://127.0.0.1:8137/textures.html?_=' + Date.now(), { waitUntil: 'networkidle0' });
+await sleep(600);
+await page.screenshot({ path: 'shots/texdump.png', fullPage: true });
+await browser.close(); xvfb.kill('SIGTERM');

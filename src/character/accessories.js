@@ -66,16 +66,16 @@ export function buildHeadband() {
       // A white hood knotted at the crown: it stops above the brow at the
       // front (the forehead is bare in the reference) and drops past the ears
       // at the sides and back.
-      const thetaTop = 0.110 + 0.060 * front + 0.012 * Math.sin(phi * 3);
+      const thetaTop = 0.095 + 0.045 * front + 0.004 * Math.sin(phi * 3);
       const thetaBot =
-        0.505 + 1.240 * Math.abs(Math.cos(phi)) + 0.960 * Math.max(0, -Math.sin(phi)) +
-        0.020 * Math.sin(phi * 3 + 1.1);
+        0.700 + 1.180 * Math.abs(Math.cos(phi)) + 0.880 * Math.max(0, -Math.sin(phi)) +
+        0.003 * Math.sin(phi * 3 + 1.1);
       const theta = lerp(thetaTop, thetaBot, v);
       // sits *inside* the fringe at the brow (so the bangs hide it) and
       // swells past the hair as it swings round to the sides and back
       // Hidden behind the hair at the brow, visible past it at the sides
       // and back — the hood is a mass *around* the head, not a cap on top.
-      const rad = R * (1.172 + 0.150 * Math.pow(away, 1.15) + 0.024 * Math.sin(Math.PI * v));
+      const rad = R * (1.150 + 0.330 * Math.pow(away, 1.05) + 0.014 * Math.sin(Math.PI * v));
       headSurface(theta, phi, rad, out);
       return out;
     },
@@ -110,16 +110,16 @@ export function buildHeadband() {
       [
         [0, 0.004, 0.002],
         [s * 0.030, 0.020, -0.004],
-        [s * 0.062, 0.040, -0.009],
-        [s * 0.088, 0.056, -0.012],
+        [s * 0.056, 0.038, -0.009],
+        [s * 0.080, 0.054, -0.012],
       ],
       0.5
     );
     const loop = new THREE.Mesh(
       hairStrand(
         blade,
-        (t) => 0.010 + 0.044 * Math.sin(Math.PI * Math.min(1, t * 1.06)) - 0.023 * t * t,
-        (t) => 0.0062 - 0.0030 * t,
+        (t) => 0.008 + 0.030 * Math.sin(Math.PI * Math.min(1, t * 1.06)) - 0.018 * t * t,
+        (t) => 0.0054 - 0.0026 * t,
         { segs: 30, radial: 12 }
       ),
       bandMat
@@ -132,7 +132,7 @@ export function buildHeadband() {
     addOutline(loop, { thickness: 0.0024, color: 0x9a9abd });
   }
 
-  const knot = new THREE.Mesh(puffyBox(0.028, 0.024, 0.019, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
+  const knot = new THREE.Mesh(puffyBox(0.024, 0.021, 0.018, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
   knot.position.set(0, 0.006, 0.006);
   knot.name = 'bowKnot';
   knot.castShadow = true;
@@ -208,7 +208,7 @@ export function pillowGeometry(w, h, d) {
   // leave visible panel creases across the cushion's face.
   const sp = (a, e) => Math.sign(a) * Math.pow(Math.abs(a), e);
   const OUTLINE_E = 0.30; // in-plane exponent → rounded rectangle
-  const POLE_E = 0.28; // axial exponent → flatter front and back
+  const POLE_E = 0.40; // axial exponent → flatter front and back
 
   // Weld the poles: `surfaceShell` leaves uSeg coincident vertices at each
   // pole, each with its own normal, which fans out into a visible pinwheel.
@@ -222,7 +222,11 @@ export function pillowGeometry(w, h, d) {
       const taper = Math.pow(Math.max(0, Math.cos(b)), 0.52);
       const x = hw * sp(Math.cos(a), OUTLINE_E) * taper;
       const y = hh * sp(Math.sin(a), OUTLINE_E) * taper;
-      const z = hd * sp(Math.sin(b), POLE_E);
+      let z = hd * sp(Math.sin(b), POLE_E);
+      const nx = x / hw;
+      const ny = y / hh;
+      const cr = (cx, cy) => Math.sin(Math.hypot(nx - cx, ny - cy) * 5.6);
+      z += hd * 0.085 * (cr(0.95, 0.95) + cr(-0.95, 0.95) + cr(0.95, -0.95) + cr(-0.95, -0.95)) * Math.abs(taper);
       out.set(x, y, z);
     },
     uv: (u, v) => [u * 2, v * 2],
@@ -254,17 +258,17 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.226, 0.492, 0.034);
-  g.rotation.set(-0.06, 0.30, -0.44);
+  g.position.set(0.208, 0.520, 0.020);
+  g.rotation.set(-0.06, 0.52, -0.44);
 
-  const W = 0.302;
-  const H = 0.410;
-  const D = 0.196;
+  const W = 0.268;
+  const H = 0.372;
+  const D = 0.180;
 
   const mesh = new THREE.Mesh(pillowGeometry(W, H, D), A.mat.pillow);
   mesh.name = 'pillowMesh';
   mesh.castShadow = true;
-  addOutline(mesh, { thickness: 0.0020 });
+  addOutline(mesh, { thickness: 0.0026, color: 0x8e94bd });
   g.add(mesh);
 
   // Trace the silhouette `puffyBox` actually produces, so the piping sits on

@@ -127,15 +127,13 @@ function catDoodle(ctx, x, y, s, color, alpha) {
   ctx.scale(s, s);
   ctx.globalAlpha = alpha;
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3.6;
+  ctx.lineWidth = 2.3;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  // head: filled, so the motif still reads when the fabric is small on screen
+  // The reference draws the cat as a white outline, not a filled silhouette.
   ctx.beginPath();
   ctx.arc(0, 0, 20, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.fill();
   ctx.stroke();
 
   // ears
@@ -231,8 +229,8 @@ export function pajamaTexture(repeat = [3, 3]) {
 
   seamless(ctx, S, S, (g) => {
     for (const [x, y, s, kind] of spots) {
-      if (kind === 'cat') catDoodle(g, x, y, s * 1.62, 'rgba(255,255,255,0.96)', 0.95);
-      else if (kind === 'heart') heart(g, x, y, s * 2.3, hex(PALETTE.heart), 0.92);
+      if (kind === 'cat') catDoodle(g, x, y, s * 2.2, 'rgba(255,255,255,0.97)', 1);
+      else if (kind === 'heart') heart(g, x, y, s * 2.6, hex(PALETTE.heart), 0.92);
       else {
         g.fillStyle = 'rgba(255,255,255,0.85)';
         g.beginPath();
@@ -309,10 +307,10 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   ctx.clip();
 
   const ig = ctx.createLinearGradient(0, iy - iry, 0, iy + iry);
-  ig.addColorStop(0.0, '#2b2460');
-  ig.addColorStop(0.30, '#463d94');
-  ig.addColorStop(0.62, '#6a5fc0');
-  ig.addColorStop(1.0, '#bdb4f2');
+  ig.addColorStop(0.0, '#2a2362');
+  ig.addColorStop(0.28, '#463d9c');
+  ig.addColorStop(0.60, '#7367dc');
+  ig.addColorStop(1.0, '#cbc4fb');
   ctx.fillStyle = ig;
   ctx.fillRect(ix - irx, iy - iry, irx * 2, iry * 2);
 
@@ -354,7 +352,7 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // --- highlights ------------------------------------------------------
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(ix - irx * 0.40, iy - iry * 0.42, irx * 0.40, iry * 0.30, -0.5, 0, Math.PI * 2);
+  ctx.ellipse(ix - irx * 0.38, iy - iry * 0.40, irx * 0.46, iry * 0.34, -0.5, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(255,255,255,0.97)';
   ctx.fill();
   ctx.restore();
@@ -474,14 +472,71 @@ export function blushTexture(size = 256) {
   const W = size;
   const { c, ctx } = canvas(W, size);
   const g = ctx.createRadialGradient(W / 2, size / 2, 0, W / 2, size / 2, W / 2);
-  g.addColorStop(0.0, rgba(PALETTE.blush, 0.72));
-  g.addColorStop(0.45, rgba(PALETTE.blush, 0.40));
+  g.addColorStop(0.0, rgba(PALETTE.blush, 0.30));
+  g.addColorStop(0.5, rgba(PALETTE.blush, 0.18));
   g.addColorStop(1.0, rgba(PALETTE.blush, 0));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, size);
+  // the diagonal hatching that reads as an anime blush
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(W / 2, size / 2, W * 0.44, size * 0.40, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.strokeStyle = rgba(PALETTE.blush, 0.72);
+  ctx.lineWidth = W * 0.022;
+  ctx.lineCap = 'round';
+  for (let i = -W; i < W * 2; i += W * 0.085) {
+    ctx.beginPath();
+    ctx.moveTo(i, -size * 0.2);
+    ctx.lineTo(i + size * 0.9, size * 1.2);
+    ctx.stroke();
+  }
+  ctx.restore();
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/**
+ * Fine strand separation for the hair mass.
+ *
+ * The shell is one smooth surface; baking the strand grooves into a tiling
+ * texture is far cheaper than modelling hundreds of locks, and it reads the
+ * same at any viewing distance.
+ */
+export function hairStrandTexture(size = 512) {
+  const { c, ctx } = canvas(size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  const N = 4;
+  const w = size / N;
+  for (let i = 0; i < N; i++) {
+    const x0 = i * w;
+    const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
+    g.addColorStop(0.00, 'rgba(58,52,106,0.72)');
+    g.addColorStop(0.13, 'rgba(255,255,255,0)');
+    g.addColorStop(0.46, 'rgba(255,255,255,0.85)');
+    g.addColorStop(0.80, 'rgba(255,255,255,0)');
+    g.addColorStop(1.00, 'rgba(58,52,106,0.72)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x0, 0, w, size);
+  }
+
+  // a little length-wise break-up so the strands are not perfectly parallel
+  let seed = 20261017;
+  const rnd = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  ctx.globalAlpha = 0.10;
+  for (let i = 0; i < 60; i++) {
+    const x = rnd() * size;
+    ctx.fillStyle = rnd() < 0.5 ? '#ffffff' : '#4a4488';
+    ctx.fillRect(x, 0, 1.6, size);
+  }
+  ctx.globalAlpha = 1;
+  return toTexture(c, { repeat: [5, 1] });
 }
 
 /* --------------------------------------------------------------- accents */

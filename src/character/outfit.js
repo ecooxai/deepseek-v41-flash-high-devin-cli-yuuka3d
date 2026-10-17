@@ -11,7 +11,7 @@ import { onTorso, frontDist } from './profile.js';
 import { POSE } from './limbs.js';
 
 const SHIRT_TOP = 1.402;
-const SHIRT_BOTTOM = 0.918;
+const SHIRT_BOTTOM = 0.962;
 const V_START = 1.252;
 
 /** Gentle cloth ripple so the pyjamas read as soft fabric, not plastic. */
@@ -26,7 +26,7 @@ function folds(a, y, amp = 0.0035) {
 function vHalfAngle(y) {
   if (y <= V_START) return 0;
   const t = Math.min(1, (y - V_START) / (SHIRT_TOP - V_START));
-  return 0.055 + 0.235 * Math.pow(t, 0.90);
+  return 0.042 + 0.155 * Math.pow(t, 0.90);
 }
 
 export function buildOutfit() {
@@ -58,7 +58,7 @@ export function buildOutfit() {
     point: (u, v, out) => {
       const a = u * TAU;
       const y = lerp(SHIRT_BOTTOM, SHIRT_TOP, v);
-      const grow = 0.0480 - 0.0220 * smoothstep(0.0, 1.0, v);
+      const grow = 0.0580 - 0.0260 * smoothstep(0.0, 1.0, v);
       onTorso(a, y, grow + folds(a, y, 0.0034), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -182,8 +182,8 @@ export function buildOutfit() {
     vSeg: 40,
     point: (u, v, out) => {
       const a = u * TAU;
-      const y = lerp(0.700, 1.020, v);
-      const grow = 0.0200 + 0.010 * smoothstep(1.0, 0.0, v);
+      const y = lerp(0.690, 1.030, v);
+      const grow = 0.0420 + 0.012 * smoothstep(1.0, 0.0, v);
       onTorso(a, y, grow + folds(a, y, 0.0030), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -219,11 +219,11 @@ export function buildOutfit() {
       flip: true, // v runs downward here, so the winding must be inverted
       point: (u, v, out) => {
         const a = u * TAU;
-        const scallop = 0.030 * Math.abs(Math.sin(4.5 * a));
+        const scallop = 0.036 * Math.abs(Math.sin(4.5 * a));
         const hemY = 0.700 - scallop;
         const y = lerp(0.870, hemY, v);
-        const r = lerp(0.101, 0.099, v);
-        const rr = r * (1 + 0.13 * smoothstep(0.55, 1.0, v));
+        const r = lerp(0.108, 0.105, v);
+        const rr = r * (1 + 0.16 * smoothstep(0.50, 1.0, v));
         out.set(cx + rr * Math.cos(a), y, rr * Math.sin(a) * 0.94 + 0.004);
       },
       uv: (u, v) => [u * 1.6, v * 1.6],
@@ -261,8 +261,8 @@ export function buildOutfit() {
         const r =
           lerp(0.0432, 0.0355, t) +
           0.0125 * smoothstep(0.0, 0.26, t) +
-          0.0080 * v +
-          0.034 * Math.pow(v, 3);
+          0.0095 * v +
+          0.046 * Math.pow(v, 3);
         out.copy(P).addScaledVector(N, Math.cos(a) * r).addScaledVector(B, Math.sin(a) * r);
       },
       uv: (u, v) => [u * 1.4, v * 1.4],
