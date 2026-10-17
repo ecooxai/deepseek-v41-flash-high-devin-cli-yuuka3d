@@ -111,20 +111,30 @@
       @keyframes spin { to { transform: rotate(360deg); } }
 
       /* touch hints for small screens */
-      @media (max-width: 640px) {
+      @media (max-width: 760px) {
+        #title { display: none; }
         #credit { padding: 6px 11px; gap: 7px; }
         #credit .model { font-size: 12px; }
-        #credit .tool, #credit .subject, #credit .sep { display: none; }
-        #title { max-width: 40vw; padding: 8px 10px; }
-        #title h1 { font-size: 12.5px; }
-        #title p { font-size: 10px; }
-        #controls { padding: 4px; gap: 2px; }
-        #controls button { padding: 6px 8px; font-size: 11px; }
+        #credit .tool, #credit .sep { display: none; }
+        #controls {
+          left: max(10px, env(safe-area-inset-left));
+          transform: none;
+          padding: 4px; gap: 2px; flex-wrap: wrap;
+          max-width: 56vw;
+        }
+        #controls button { padding: 5px 7px; font-size: 11px; }
         #score { padding: 7px 11px; }
         #score .val { font-size: 18px; }
       }
-      @media (max-width: 460px) {
-        #title p { display: none; }
+      /* short viewports (phone landscape): keep the HUD out of the subject */
+      @media (max-height: 540px) {
+        #title { display: none; }
+        #controls { flex-wrap: nowrap; }
+        #credit { top: 6px; padding: 5px 10px; }
+        #controls { bottom: 6px; }
+        #score { bottom: 6px; padding: 6px 10px; }
+        #score .val { font-size: 17px; }
+        #score .bar { margin-top: 3px; }
       }
     </style>
   </head>

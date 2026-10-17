@@ -113,7 +113,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 70 / 1000 · self-assessed **91 / 100**.
+Iteration 74 / 1000 · self-assessed **91 / 100**.
 
 Known weak spots (in priority order):
 
@@ -129,3 +129,12 @@ Measurement helpers that proved useful when tuning proportions: render with
 `?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette
 width profile against the reference with a small script — several proportion
 fixes came from that rather than from eyeballing renders.
+
+## Honest ceiling
+
+The target is a hand-painted 2D illustration; this is real-time procedural
+3D with no sculpting, no textures authored in an image editor and no external
+assets. It captures the design read (silhouette, palette, outfit construction,
+halo/bow/pillow, cat-print fabric) but will not reach illustration fidelity.
+The gap that remains is fine surface detail — cloth drape, individual hair
+strands, facial modelling — which is where the remaining points live.

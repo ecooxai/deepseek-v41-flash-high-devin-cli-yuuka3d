@@ -127,8 +127,8 @@ export function buildHair() {
         const thetaTop = 1.44 - 0.24 * Math.abs(su);
         const root = headSurface(thetaTop, phi, R * 1.06);
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        const tipY = -1.245 + 0.048 * Math.abs(su) + 0.040 * Math.sin(su * 6.2 + 0.4);
-        const tipX = su * (0.222 + 0.045 * Math.abs(su));
+        const tipY = -1.255 + 0.030 * Math.abs(su) + 0.024 * Math.sin(su * 5.4 + 0.4);
+        const tipX = su * (0.190 + 0.030 * Math.abs(su));
         const tipZ = -0.118 - 0.05 * Math.abs(su);
         const bulge = (0.052 + 0.026 * Math.abs(su)) * Math.sin(Math.PI * Math.pow(v, 0.85));
         const sway = 0.016 * Math.sin(su * 3.1 + 1.2) * Math.sin(Math.PI * v);
@@ -158,10 +158,10 @@ export function buildHair() {
     const theta0 = 1.46 - 0.26 * as;
     const root = headSurface(theta0, phi0, R * 1.075);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const hemWave = 0.030 * Math.sin(s * 2.1 + 0.7);
+    const hemWave = 0.020 * Math.sin(s * 2.1 + 0.7);
     const tip = new THREE.Vector3(
-      s * (0.218 + 0.050 * as),
-      -1.215 + 0.050 * as + hemWave,
+      s * (0.186 + 0.036 * as),
+      -1.228 + 0.032 * as + hemWave,
       -0.112 - 0.048 * as
     );
     const p1 = root.clone().lerp(tip, 0.24).addScaledVector(dir, 0.046 + 0.018 * as);

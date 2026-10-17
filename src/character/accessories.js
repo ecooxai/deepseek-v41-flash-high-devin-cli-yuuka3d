@@ -135,7 +135,7 @@ export function buildHeadband() {
 /* ------------------------------------------------------------- pillow --- */
 
 export function pillowGeometry(w, h, d) {
-  const geo = puffyBox(w, h, d, { seg: 24, round: 0.46, bulge: 0.012 });
+  const geo = puffyBox(w, h, d, { seg: 26, round: 0.58, bulge: 0.014 });
   const pos = geo.attributes.position;
   const v = new THREE.Vector3();
   const n = new THREE.Vector3();

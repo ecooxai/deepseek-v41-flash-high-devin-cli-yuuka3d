@@ -227,8 +227,8 @@ export function buildOutfit() {
       flip: true,
       point: (u, v, out) => {
         const a = u * TAU;
-        const scallop = 0.035 * Math.abs(Math.sin(3.5 * a));
-        const tEnd = 0.335 + scallop * 0.5;
+        const scallop = 0.055 * Math.abs(Math.sin(3.2 * a));
+        const tEnd = 0.315 + scallop * 0.55;
         const t = lerp(0.0, tEnd, v);
         const f = t * segs;
         const i0 = Math.min(segs, Math.floor(f));
@@ -238,7 +238,7 @@ export function buildOutfit() {
         const N = frames.normals[i0].clone().lerp(frames.normals[i1], k).normalize();
         const B = frames.binormals[i0].clone().lerp(frames.binormals[i1], k).normalize();
         const base = lerp(0.0455, 0.0345, t);
-        const r = base + 0.0085 + 0.0035 * v;
+        const r = base + 0.0090 + 0.0055 * v + 0.010 * Math.pow(v, 3);
         out.copy(P).addScaledVector(N, Math.cos(a) * r).addScaledVector(B, Math.sin(a) * r);
       },
       uv: (u, v) => [u * 1.4, v * 1.4],
