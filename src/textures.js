@@ -502,10 +502,11 @@ export function clothTexture(base, shade, size = 256) {
   const { c, ctx } = canvas(size, size);
   ctx.fillStyle = hex(base);
   ctx.fillRect(0, 0, size, size);
-  const g = ctx.createLinearGradient(0, 0, size, size);
-  g.addColorStop(0, rgba(shade, 0.35));
-  g.addColorStop(0.5, rgba(0xffffff, 0.0));
-  g.addColorStop(1, rgba(shade, 0.3));
+  // A diagonal gradient tiles into a visible diamond grid across a large
+  // surface, so the shading is radial and seamless instead.
+  const g = ctx.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.72);
+  g.addColorStop(0, rgba(0xffffff, 0.0));
+  g.addColorStop(1, rgba(shade, 0.22));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   // faint weave

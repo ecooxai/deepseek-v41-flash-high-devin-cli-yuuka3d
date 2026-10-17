@@ -209,28 +209,21 @@ export function pillowGeometry(w, h, d) {
 }
 
 /** The stitched piping that runs around the cushion's edge. */
-function pillowSeam(hw, hh, r, thick = 0.0060) {
+function pillowSeam(hw, hh, thick = 0.0058) {
+  const sp = (a, e) => Math.sign(a) * Math.pow(Math.abs(a), e);
   const pts = [];
-  const N = 7;
-  const corners = [
-    [hw - r, hh - r, 0],
-    [-(hw - r), hh - r, Math.PI / 2],
-    [-(hw - r), -(hh - r), Math.PI],
-    [hw - r, -(hh - r), Math.PI * 1.5],
-  ];
-  for (const [x, y, a0] of corners) {
-    for (let i = 0; i <= N; i++) {
-      const a = a0 + (i / N) * (Math.PI / 2);
-      pts.push(new THREE.Vector3(x + Math.cos(a) * r, y + Math.sin(a) * r, 0));
-    }
+  const N = 84;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * TAU;
+    pts.push(new THREE.Vector3(hw * sp(Math.cos(a), 0.40), hh * sp(Math.sin(a), 0.40), 0));
   }
   const curve = new THREE.CatmullRomCurve3(pts, true);
   curve.curveType = 'catmullrom';
   curve.tension = 0.5;
   const Z = new THREE.Vector3(0, 0, 1);
   const wd = new THREE.Vector3();
-  return hairStrand(curve, () => thick, () => thick * 0.75, {
-    segs: 160,
+  return hairStrand(curve, () => thick, () => thick * 0.7, {
+    segs: 180,
     radial: 8,
     frameFn: (t, p, tg) => [wd.crossVectors(tg, Z).normalize().clone(), Z.clone()],
   });
@@ -255,7 +248,7 @@ export function buildPillow() {
 
   // Trace the silhouette `puffyBox` actually produces, so the piping sits on
   // the cushion's edge instead of floating outside its rounded corners.
-  const seam = new THREE.Mesh(pillowSeam(W / 2 - 0.010, H / 2 - 0.010, Math.min(W, H) * 0.14), A.mat.trimShade);
+  const seam = new THREE.Mesh(pillowSeam(W / 2 - 0.001, H / 2 - 0.001), A.mat.trimShade);
   seam.name = 'pillowSeam';
   seam.userData.noOutline = true;
   g.add(seam);

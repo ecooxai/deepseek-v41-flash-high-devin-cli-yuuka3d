@@ -99,6 +99,10 @@ tools/
 * **`paintAlongV` reads `uv.y`.** Any shell whose `uv` scales `v` (e.g.
   `[u * 4, v * 2]`) clamps to the last colour stop past `v = 0.5`, so half the
   surface ends up one flat tone.
+* **Procedural textures must tile seamlessly.** `clothTexture`'s diagonal
+  gradient repeated 4×4 across the pillow and read as a diamond grid over the
+  cushion; it is a radial gradient now. Anything with a directional gradient
+  will show its tile boundaries.
 * **Hair lengths are metres from the head centre.** `headSurface` returns
   R-scaled vectors while the tip literals are plain metres, so the two live in
   the same space. `HEM_Y = -0.98` puts the hem at world y ≈ 0.59 — mid-thigh,
@@ -139,7 +143,7 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 83 / 1000 · self-assessed **94 / 100**.
+Iteration 84 / 1000 · self-assessed **94 / 100**.
 
 Known weak spots (in priority order):
 
@@ -147,7 +151,8 @@ Known weak spots (in priority order):
    the side locks read as flat panels from the front.
 2. Hands read as a mitten at close range; the fingers are four swept tubes.
 3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
-4. The pillow is a superellipsoid cushion; it has no gathered corners.
+4. The pillow is a superellipsoid cushion with a piping seam; it has no
+   gathered corners and its outline is heavier than the painted original.
 5. The side profile is nearly all hair; only a sliver of the face reads.
 6. Legs are near-cylindrical — the knee and calf bumps are barely modelled.
 7. The bow's loops merge into a blob at some angles.
