@@ -18,23 +18,23 @@ import { headSurface, hairStrand, curveFromPoints, surfaceShell, paintAlongV, le
 const R = DIMS.headR;
 
 const HAIR_STOPS = [
-  [0.0, 0x453a75],
-  [0.3, 0x5d509d],
-  [0.62, 0x7768c0],
-  [0.86, 0x9384d9],
-  [1.0, 0xab9ee8],
+  [0.0, 0x564a92],
+  [0.3, 0x6d5fb4],
+  [0.62, 0x8777d2],
+  [0.86, 0xa192e8],
+  [1.0, 0xb8acf4],
 ];
 const HAIR_STOPS_DEEP = [
-  [0.0, 0x2f2753],
-  [0.4, 0x433a70],
-  [0.75, 0x5a4c96],
-  [1.0, 0x7766b5],
+  [0.0, 0x40366e],
+  [0.4, 0x554990],
+  [0.75, 0x6d5eb4],
+  [1.0, 0x8a79cf],
 ];
 const HAIR_STOPS_SHEET = [
-  [0.0, 0x413777],
-  [0.35, 0x584a99],
-  [0.7, 0x7161bc],
-  [1.0, 0x9384da],
+  [0.0, 0x504490],
+  [0.35, 0x685ab0],
+  [0.7, 0x8272cc],
+  [1.0, 0xa495e8],
 ];
 
 function mulberry32(a) {
@@ -99,11 +99,11 @@ export function buildHair() {
     uv: (u, v) => [u * 5, v * 3],
   });
   paintAlongV(capGeo, [
-    [0.0, 0x504487],
-    [0.16, 0x6e60b8],
-    [0.30, 0x9d90e4],
-    [0.48, 0x6a5cad],
-    [1.0, 0x4c4083],
+    [0.0, 0x5b4e99],
+    [0.16, 0x7c6dc8],
+    [0.30, 0xac9fee],
+    [0.48, 0x7869bd],
+    [1.0, 0x564a94],
   ]);
   const cap = new THREE.Mesh(capGeo, assets().mat.hair);
   cap.name = 'hairCap';
@@ -119,7 +119,7 @@ export function buildHair() {
   //
   // Lengths are in metres from the head centre, so the hem lands just below
   // the hip (world y ≈ 1.05) the way the reference does.
-  const HEM_Y = -0.412;
+  const HEM_Y = -0.566;
 
   {
     const curtainGeo = surfaceShell({
@@ -134,11 +134,11 @@ export function buildHair() {
         const root = headSurface(1.02 - 0.28 * su * su, phi, R * 1.06);
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
         const ev = Math.pow(v, 1.4);
-        const tipX = dir.x * 0.166;
+        const tipX = dir.x * 0.140;
         const tipZ = dir.z * 0.104 - 0.020;
         // The mass stands further off the back than it spreads sideways, so
         // the side profile has depth instead of reading as a flat board.
-        const bulge = (0.032 + 0.022 * (1 - as)) * smoothstep(0.10, 0.62, v);
+        const bulge = (0.024 + 0.016 * (1 - as)) * smoothstep(0.10, 0.62, v);
         return out.set(
           lerp(root.x, tipX, ev) + dir.x * bulge,
           lerp(root.y, HEM_Y - 0.030 - 0.030 * as, v),
@@ -158,16 +158,16 @@ export function buildHair() {
 
   // Outer locks: these are what you actually see, so they vary in width and
   // length and sit slightly proud of the curtain.
-  const NL = 13;
+  const NL = 9;
   for (let i = 0; i < NL; i++) {
     const s0 = (i / (NL - 1)) * 2 - 1;
     const as = Math.abs(s0);
     const j = rnd() - 0.5;
     const phi0 = Math.PI * 1.5 + s0 * 1.28 + 0.055 * j;
-    const root = headSurface(1.00 - 0.26 * as + 0.05 * j, phi0, R * 1.10);
+    const root = headSurface(1.12 - 0.24 * as + 0.05 * j, phi0, R * 1.10);
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const hemY = HEM_Y + 0.036 * Math.sin(i * 1.9 + 0.6) + 0.034 * as + 0.014 * j;
-    const hemR = 0.188 + 0.020 * Math.sin(i * 1.35 + 2.2);
+    const hemY = HEM_Y + 0.022 * Math.sin(i * 1.6 + 0.6) + 0.030 * as + 0.010 * j;
+    const hemR = 0.156 + 0.017 * Math.sin(i * 1.35 + 2.2);
     const tip = new THREE.Vector3(dir.x * hemR, hemY, dir.z * 0.116 - 0.024);
     const p1 = root.clone().lerp(tip, 0.26).addScaledVector(dir, 0.042 + 0.014 * as);
     p1.z += dir.z * 0.030;
@@ -178,9 +178,9 @@ export function buildHair() {
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.062 + 0.016 * as, 0.022, 0.032),
+      sheetW(0.076 + 0.018 * as, 0.024, 0.036),
       sheetT(0.019, 0.012),
-      { segs: 42, radial: 14, stops: i % 3 === 0 ? HAIR_STOPS : HAIR_STOPS_SHEET, outline: 0.0022 }
+      { segs: 42, radial: 14, stops: i % 2 === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0026 }
     );
   }
 

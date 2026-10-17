@@ -133,10 +133,10 @@ export function buildHead() {
 
   /* ----------------------------------------------------------- nose ---- */
   // Anime noses are a suggestion, not a feature — a barely-there bump.
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.030, 12, 10), A.mat.skinSoft);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.021, 12, 10), A.mat.skinSoft);
   nose.name = 'nose';
   headSurface(2.020, Math.PI / 2, R * 1.028, nose.position);
-  nose.scale.set(0.85, 0.45, 0.7);
+  nose.scale.set(0.9, 0.42, 0.7);
   nose.userData.noOutline = true;
   g.add(nose);
 

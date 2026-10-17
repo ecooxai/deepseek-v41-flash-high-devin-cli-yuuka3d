@@ -87,8 +87,8 @@ export class Viewer {
   _buildLights() {
     const scene = this.scene;
 
-    scene.add(new THREE.HemisphereLight(0xdcecff, 0xa9c6e6, 0.62));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+    scene.add(new THREE.HemisphereLight(0xdcecff, 0xbcd4ec, 0.74));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.22));
 
     const key = new THREE.DirectionalLight(0xfff4ea, 1.28);
     key.position.set(-2.1, 3.4, 2.8);

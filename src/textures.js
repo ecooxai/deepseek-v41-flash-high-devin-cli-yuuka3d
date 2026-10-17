@@ -127,13 +127,15 @@ function catDoodle(ctx, x, y, s, color, alpha) {
   ctx.scale(s, s);
   ctx.globalAlpha = alpha;
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3.2;
+  ctx.lineWidth = 3.6;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  // head
+  // head: filled, so the motif still reads when the fabric is small on screen
   ctx.beginPath();
   ctx.arc(0, 0, 20, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fill();
   ctx.stroke();
 
   // ears
@@ -146,7 +148,7 @@ function catDoodle(ctx, x, y, s, color, alpha) {
   }
 
   // eyes
-  ctx.fillStyle = color;
+  ctx.fillStyle = 'rgba(96,120,160,0.85)';
   for (const sx of [-1, 1]) {
     ctx.beginPath();
     ctx.ellipse(sx * 8, -3, 2.6, 3.4, 0, 0, Math.PI * 2);

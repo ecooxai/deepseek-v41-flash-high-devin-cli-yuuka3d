@@ -36,7 +36,14 @@ export function decal(map, { transparent = true, opacity = 1, depthWrite = false
  * Outline shell. Renders back-faces of a slightly inflated copy of the mesh,
  * so silhouettes read like a hand-drawn anime line.
  */
+/**
+ * The reference is painted with soft, coloured line art rather than inked
+ * contours, so every outline is scaled down from the authored thickness.
+ */
+const OUTLINE_SCALE = 0.58;
+
 export function outlineMaterial(thickness = 0.006, color = PALETTE.outline, opacity = 1) {
+  const t = thickness * OUTLINE_SCALE;
   const m = new THREE.MeshBasicMaterial({
     color,
     side: THREE.BackSide,
@@ -45,12 +52,12 @@ export function outlineMaterial(thickness = 0.006, color = PALETTE.outline, opac
     depthWrite: true,
     toneMapped: false,
   });
-  m.userData.thickness = thickness;
+  m.userData.thickness = t;
   m.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
-       transformed += normal * ${thickness.toFixed(5)};`
+       transformed += normal * ${t.toFixed(5)};`
     );
   };
   return m;

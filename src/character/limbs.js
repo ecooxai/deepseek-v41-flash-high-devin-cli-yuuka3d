@@ -44,26 +44,26 @@ export const POSE = {
 };
 
 const ARM_RADIUS = profileFn([
-  [0.0, 0.0425],
-  [0.16, 0.0395],
-  [0.5, 0.0330],
-  [0.62, 0.0305],
-  [0.88, 0.0250],
-  [1.0, 0.0228],
+  [0.0, 0.0392],
+  [0.16, 0.0362],
+  [0.5, 0.0300],
+  [0.62, 0.0278],
+  [0.88, 0.0228],
+  [1.0, 0.0208],
 ]);
 
 const LEG_RADIUS = profileFn([
-  [0.0, 0.0725],
-  [0.10, 0.0700],
-  [0.26, 0.0585],
-  [0.38, 0.0455],
-  [0.46, 0.0398],
-  [0.54, 0.0512],
-  [0.62, 0.0468],
-  [0.72, 0.0400],
-  [0.84, 0.0305],
-  [0.93, 0.0272],
-  [1.0, 0.0250],
+  [0.0, 0.0745],
+  [0.10, 0.0715],
+  [0.26, 0.0590],
+  [0.38, 0.0448],
+  [0.46, 0.0382],
+  [0.52, 0.0505],
+  [0.60, 0.0492],
+  [0.70, 0.0405],
+  [0.82, 0.0292],
+  [0.92, 0.0262],
+  [1.0, 0.0246],
 ]);
 
 /* ---------------------------------------------------------------- neck -- */
@@ -76,7 +76,7 @@ export function buildNeck() {
     [V3(0, 1.378, -0.004), V3(0, 1.412, 0.002), V3(0, 1.448, 0.006), V3(0, 1.488, 0.006)],
     0.5
   );
-  const geo = tubeAlongCurve(curve, profileFn([[0, 0.0480], [0.35, 0.0395], [0.75, 0.0345], [1, 0.0345]]), {
+  const geo = tubeAlongCurve(curve, profileFn([[0, 0.0415], [0.35, 0.0340], [0.75, 0.0292], [1, 0.0292]]), {
     segs: 24,
     radial: 26,
   });
@@ -130,7 +130,7 @@ function finger(len, r, curl) {
     pts.push(V3(0, len * t, -Math.sin(bend) * len * 0.55));
   }
   const curve = curveFromPoints(pts, 0.5);
-  return tubeAlongCurve(curve, (t) => r * (1 - 0.28 * t), { segs: 16, radial: 10 });
+  return tubeAlongCurve(curve, (t) => r * (1 - 0.10 * t), { segs: 16, radial: 10 });
 }
 
 export function makeHand({ side = 1, curl = 0.5 } = {}) {
@@ -139,7 +139,7 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   g.name = 'hand';
 
   // Palm: a tapered slab — narrow at the wrist, wide across the knuckles.
-  const palmGeo = puffyBox(0.058, 0.068, 0.024, { seg: 14, round: 0.62 });
+  const palmGeo = puffyBox(0.060, 0.068, 0.025, { seg: 14, round: 0.62 });
   {
     const pos = palmGeo.attributes.position;
     const v = new THREE.Vector3();
@@ -160,11 +160,13 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   g.add(palm);
 
   // Four fingers of graduated length, fanned slightly and curling forward.
+  // The fingers must overlap or the hand reads as a comb: spacing stays below
+  // the finger diameter.
   const specs = [
-    [-0.0190, 0.0300, 0.0069],
-    [-0.0064, 0.0345, 0.0073],
-    [0.0065, 0.0330, 0.0071],
-    [0.0188, 0.0272, 0.0064],
+    [-0.0178, 0.0298, 0.0078],
+    [-0.0060, 0.0342, 0.0081],
+    [0.0061, 0.0328, 0.0079],
+    [0.0176, 0.0270, 0.0072],
   ];
   for (const [x, len, r] of specs) {
     const f = new THREE.Mesh(finger(len, r, curl), A.mat.skin);
@@ -180,10 +182,10 @@ export function makeHand({ side = 1, curl = 0.5 } = {}) {
   const thumbPts = [];
   for (let i = 0; i <= 4; i++) {
     const t = i / 4;
-    thumbPts.push(V3(side * (0.024 + 0.023 * t), 0.012 + 0.030 * t, 0.007 * t - curl * 0.014 * t * t));
+    thumbPts.push(V3(side * (0.020 + 0.021 * t), 0.014 + 0.029 * t, 0.007 * t - curl * 0.014 * t * t));
   }
   const thumb = new THREE.Mesh(
-    tubeAlongCurve(curveFromPoints(thumbPts, 0.5), (t) => 0.0088 * (1 - 0.22 * t), { segs: 16, radial: 10 }),
+    tubeAlongCurve(curveFromPoints(thumbPts, 0.5), (t) => 0.0098 * (1 - 0.14 * t), { segs: 16, radial: 10 }),
     A.mat.skin
   );
   thumb.name = 'thumb';
@@ -261,7 +263,7 @@ export function buildSlippers() {
     foot.rotation.x = -0.03;
 
     // sole
-    const sole = new THREE.Mesh(puffyBox(0.116, 0.034, 0.228, { seg: 12, round: 0.5, bulge: 0.005 }), A.mat.sole);
+    const sole = new THREE.Mesh(puffyBox(0.138, 0.042, 0.268, { seg: 12, round: 0.5, bulge: 0.005 }), A.mat.sole);
     sole.name = 'sole';
     sole.position.set(0, 0.016, 0.014);
     sole.castShadow = true;
@@ -269,7 +271,7 @@ export function buildSlippers() {
     foot.add(sole);
 
     // fluffy upper (open-back mule)
-    const upper = new THREE.Mesh(puffyBox(0.113, 0.090, 0.170, { seg: 14, round: 0.62, bulge: 0.009 }), A.mat.slipper);
+    const upper = new THREE.Mesh(puffyBox(0.136, 0.112, 0.204, { seg: 14, round: 0.62, bulge: 0.009 }), A.mat.slipper);
     upper.name = 'upper';
     upper.position.set(0, 0.058, 0.042);
     upper.castShadow = true;
@@ -277,7 +279,7 @@ export function buildSlippers() {
     foot.add(upper);
 
     // heel cushion
-    const heel = new THREE.Mesh(puffyBox(0.098, 0.072, 0.072, { seg: 10, round: 0.62, bulge: 0.007 }), A.mat.slipper);
+    const heel = new THREE.Mesh(puffyBox(0.118, 0.090, 0.086, { seg: 10, round: 0.62, bulge: 0.007 }), A.mat.slipper);
     heel.name = 'heel';
     heel.position.set(0, 0.048, -0.058);
     heel.userData.noOutline = true;

@@ -7,7 +7,7 @@ export const META = {
   model: 'DeepSeek V4.1 Flash High',
   tool: 'Devin CLI · three.js',
   subject: 'Yuuka — Pajama Ver.',
-  iteration: 79,
+  iteration: 81,
   maxIterations: 1000,
   score: 94,
 };
@@ -25,9 +25,9 @@ export const DIMS = {
   neckY: 1.43,
   chinY: 1.437,
 
-  headC: 1.556, // head centre
-  headR: 0.1205, // head radius
-  headTop: 1.700,
+  headC: 1.566, // head centre
+  headR: 0.1125, // head radius
+  headTop: 1.694,
 
   shoulderX: 0.132,
   hipX: 0.088,
@@ -58,7 +58,7 @@ export const PALETTE = {
   trim: 0xfbfdff,
   trimShade: 0xdcebf9,
   heart: 0xf3aec9,
-  button: 0xeff4fa,
+  button: 0xfdfeff,
 
   slipper: 0xf3f3f9,
   slipperSole: 0xbfbfd2,

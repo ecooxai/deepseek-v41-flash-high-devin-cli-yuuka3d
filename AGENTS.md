@@ -127,23 +127,39 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 79 / 1000 · self-assessed **94 / 100**.
+Iteration 81 / 1000 · self-assessed **94 / 100**.
 
 Known weak spots (in priority order):
 
-1. The back hair is still chunkier than the hand-painted original — the locks
-   are broad ribbons rather than finely separated strands.
+1. The back hair is still broad ribbons rather than finely separated strands,
+   and the hem is a row of soft points instead of drawn locks.
 2. Hands read as a mitten at close range; the fingers are four swept tubes.
 3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
-4. The pillow is a rounded slab with a piping seam, not a stitched cushion.
+4. The pillow is a superellipsoid cushion; it has no gathered corners.
 5. The side profile is nearly all hair; only a sliver of the face reads.
-6. Legs are near-cylindrical — knees are barely modelled.
+6. Legs are near-cylindrical — the knee and calf bumps are barely modelled.
+7. The bow's loops merge into a white blob at close range.
 
 Measurement helpers that proved useful when tuning proportions: render with
 `?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette
 width profile against the reference; `?flat=1&nooutline=1` to check geometry
 and normals; `tools/bbox.mjs` for part extents; `tools/probe.mjs` to identify
 which mesh owns a pixel.
+
+Reference landmarks measured off `docs/reference/yuukapa.png` (1111 px per
+metre, feet at y = 2033):
+
+| landmark | world y |
+| --- | --- |
+| hair top | 1.693 |
+| halo | 1.777 (radius ≈ 0.19) |
+| bow | 1.75 top, ≈ 0.20 wide |
+| eyes | 1.572 |
+| mouth | 1.506 |
+| shirt hem | 0.955 |
+| shorts hem | 0.714 |
+| hair tips | ≈ 1.00 |
+| pillow | 0.84 down to 0.20, ≈ 0.33 wide |
 
 ## Honest ceiling
 

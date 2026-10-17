@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { DIMS, PALETTE } from '../config.js';
 import { assets } from '../assets.js';
 import { addOutline } from '../materials.js';
-import { surfaceShell, hairStrand, curveFromPoints, puffyBox, headSurface, lerp, smoothstep, TAU } from '../geometry.js';
+import { surfaceShell, hairStrand, curveFromPoints, puffyBox, headSurface, weldVertices, lerp, smoothstep, TAU } from '../geometry.js';
 
 const R = DIMS.headR;
 
@@ -21,13 +21,13 @@ export function buildHalo() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'halo';
-  g.position.set(0, DIMS.headC + R * 1.60, -0.020);
-  g.rotation.set(0.225, 0, 0.05);
+  g.position.set(0, DIMS.headC + R * 1.87, -0.020);
+  g.rotation.set(0.11, 0, 0.05);
 
   // A thin, wide band seen almost edge-on — the reference halo is a flat
   // hoop, not a fat donut, so the tube stays small against a large radius.
-  const MAJOR = 0.152;
-  const TUBE = 0.0038;
+  const MAJOR = 0.185;
+  const TUBE = 0.0046;
 
   const ring = new THREE.Mesh(new THREE.TorusGeometry(MAJOR, TUBE, 12, 132), A.mat.halo);
   ring.name = 'haloRing';
@@ -61,11 +61,14 @@ export function buildHeadband() {
     vSeg: 14,
     point: (u, v, out) => {
       const phi = u * TAU;
-      const front = Math.sin(phi);
-      const thetaTop = 0.335 + 0.055 * Math.max(0, front) + 0.020 * Math.sin(phi * 7);
-      const thetaBot = 0.960 + 0.070 * Math.max(0, -front) + 0.030 * Math.sin(phi * 5 + 1.1);
+      const front = Math.max(0, Math.sin(phi));
+      const away = 1 - front;
+      const thetaTop = 0.235 + 0.100 * front + 0.022 * Math.sin(phi * 7);
+      const thetaBot = 1.440 + 0.100 * Math.max(0, -Math.sin(phi)) + 0.032 * Math.sin(phi * 5 + 1.1);
       const theta = lerp(thetaTop, thetaBot, v);
-      const rad = R * (1.176 + 0.030 * Math.sin(Math.PI * v) + 0.012 * Math.sin(phi * 9));
+      // sits *inside* the fringe at the brow (so the bangs hide it) and
+      // swells past the hair as it swings round to the sides and back
+      const rad = R * (1.030 + 0.215 * Math.pow(away, 2.5) + 0.020 * Math.sin(Math.PI * v) + 0.008 * Math.sin(phi * 9));
       headSurface(theta, phi, rad, out);
       return out;
     },
@@ -93,7 +96,7 @@ export function buildHeadband() {
 
   for (const s of [-1, 1]) {
     const loop = new THREE.Mesh(
-      ribbonLoop(s, { cx: 0.040, cy: 0.024, rx: 0.026, ry: 0.036, w: 0.0190, thick: 0.0088 }),
+      ribbonLoop(s, { cx: 0.041, cy: 0.026, rx: 0.028, ry: 0.040, w: 0.0195, thick: 0.0082 }),
       bandMat
     );
     loop.name = 'bowLoop';
@@ -104,7 +107,7 @@ export function buildHeadband() {
     addOutline(loop, { thickness: 0.0026, color: 0x9a9abd });
   }
 
-  const knot = new THREE.Mesh(puffyBox(0.026, 0.026, 0.021, { seg: 12, round: 0.55, bulge: 0.003 }), A.mat.trim);
+  const knot = new THREE.Mesh(puffyBox(0.024, 0.024, 0.019, { seg: 12, round: 0.55, bulge: 0.003 }), A.mat.trim);
   knot.name = 'bowKnot';
   knot.castShadow = true;
   knot.userData.noOutline = true;
@@ -172,25 +175,32 @@ function ribbonLoop(s, { cx, cy, rx, ry, w, thick, segs = 84 }) {
 /* ------------------------------------------------------------- pillow --- */
 
 export function pillowGeometry(w, h, d) {
-  const geo = puffyBox(w, h, d, { seg: 46, round: 0.60 });
-  const pos = geo.attributes.position;
   const hw = w / 2;
   const hh = h / 2;
-  const v = new THREE.Vector3();
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const nx = Math.max(-1, Math.min(1, v.x / hw));
-    const ny = Math.max(-1, Math.min(1, v.y / hh));
-    // A real cushion is fat in the middle and pinches to a seam at the edge,
-    // rather than being a uniform slab.
-    const s = Math.pow(1 - nx * nx, 0.55) * Math.pow(1 - ny * ny, 0.55);
-    v.z *= 0.22 + 0.78 * s;
-    // soft stuffing ripples
-    v.z += 0.011 * s * Math.sin(v.x * 21 + 0.7) * Math.sin(v.y * 13 + 1.9);
-    pos.setXYZ(i, v.x, v.y, v.z);
-  }
-  geo.computeVertexNormals();
-  return geo;
+  const hd = d / 2;
+  // A superellipsoid rather than a spherified cube: the cube's six patches
+  // leave visible panel creases across the cushion's face.
+  const sp = (a, e) => Math.sign(a) * Math.pow(Math.abs(a), e);
+  const OUTLINE_E = 0.40; // in-plane exponent → rounded rectangle
+  const POLE_E = 0.36; // axial exponent → flatter front and back
+
+  // Weld the poles: `surfaceShell` leaves uSeg coincident vertices at each
+  // pole, each with its own normal, which fans out into a visible pinwheel.
+  return weldVertices(surfaceShell({
+    uSeg: 96,
+    vSeg: 56,
+    flip: true, // this parametrisation winds inward
+    point: (u, v, out) => {
+      const a = u * TAU;
+      const b = -Math.PI / 2 + v * Math.PI;
+      const taper = Math.pow(Math.max(0, Math.cos(b)), 0.52);
+      const x = hw * sp(Math.cos(a), OUTLINE_E) * taper;
+      const y = hh * sp(Math.sin(a), OUTLINE_E) * taper;
+      const z = hd * sp(Math.sin(b), POLE_E);
+      out.set(x, y, z);
+    },
+    uv: (u, v) => [u * 2, v * 2],
+  }));
 }
 
 /** The stitched piping that runs around the cushion's edge. */
@@ -225,28 +235,22 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.196, 0.640, 0.048);
-  g.rotation.set(-0.04, 0.22, -0.16);
+  g.position.set(0.236, 0.548, 0.052);
+  g.rotation.set(-0.05, 0.24, -0.60);
 
-  const W = 0.290;
-  const H = 0.520;
-  const D = 0.200;
+  const W = 0.315;
+  const H = 0.462;
+  const D = 0.212;
 
   const mesh = new THREE.Mesh(pillowGeometry(W, H, D), A.mat.pillow);
   mesh.name = 'pillowMesh';
   mesh.castShadow = true;
-  addOutline(mesh, { thickness: 0.0026 });
+  addOutline(mesh, { thickness: 0.0020 });
   g.add(mesh);
 
   // Trace the silhouette `puffyBox` actually produces, so the piping sits on
   // the cushion's edge instead of floating outside its rounded corners.
-  const ROUND = 0.60;
-  const k = 1 - ROUND;
-  const rr = Math.min(W, H, D) / 2;
-  const seam = new THREE.Mesh(
-    pillowSeam((W / 2) * k + rr * ROUND - 0.002, (H / 2) * k + rr * ROUND - 0.002, rr * ROUND * 0.85),
-    A.mat.trimShade
-  );
+  const seam = new THREE.Mesh(pillowSeam(W / 2 - 0.010, H / 2 - 0.010, Math.min(W, H) * 0.14), A.mat.trimShade);
   seam.name = 'pillowSeam';
   seam.userData.noOutline = true;
   g.add(seam);

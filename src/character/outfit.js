@@ -11,8 +11,8 @@ import { onTorso, frontDist } from './profile.js';
 import { POSE } from './limbs.js';
 
 const SHIRT_TOP = 1.402;
-const SHIRT_BOTTOM = 1.038;
-const V_START = 1.278;
+const SHIRT_BOTTOM = 0.955;
+const V_START = 1.252;
 
 /** Gentle cloth ripple so the pyjamas read as soft fabric, not plastic. */
 function folds(a, y, amp = 0.0035) {
@@ -58,7 +58,7 @@ export function buildOutfit() {
     point: (u, v, out) => {
       const a = u * TAU;
       const y = lerp(SHIRT_BOTTOM, SHIRT_TOP, v);
-      const grow = 0.0240 - 0.0035 * smoothstep(0.0, 1.0, v);
+      const grow = 0.0480 - 0.0220 * smoothstep(0.0, 1.0, v);
       onTorso(a, y, grow + folds(a, y, 0.0034), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -88,9 +88,9 @@ export function buildOutfit() {
         closed: false,
         flip: sgn > 0,
         point: (u, v, out) => {
-          const y = lerp(1.412, 1.222, v);
+          const y = lerp(1.412, 1.022, v);
           const inner = vHalfAngle(y) + 0.012 + pad;
-          const outer = inner + 0.155 + 0.100 * (1 - v) - pad;
+          const outer = inner + 0.215 + 0.130 * (1 - v) - pad;
           const a = Math.PI / 2 + sgn * lerp(inner, outer, u);
           onTorso(a, y, grow + 0.006 * Math.sin(Math.PI * u), out);
         },
@@ -135,16 +135,16 @@ export function buildOutfit() {
     },
     uv: (u, v) => [u, v * 3],
   });
-  const placket = new THREE.Mesh(placketGeo, A.mat.trim);
+  const placket = new THREE.Mesh(placketGeo, A.mat.trimShade);
   placket.name = 'placket';
   placket.userData.noOutline = true;
   g.add(placket);
 
-  for (let i = 0; i < 5; i++) {
-    const y = 1.208 - i * 0.042;
-    const btn = new THREE.Mesh(new THREE.SphereGeometry(0.0078, 14, 12), A.mat.button);
+  for (let i = 0; i < 3; i++) {
+    const y = 1.183 - i * 0.068;
+    const btn = new THREE.Mesh(new THREE.SphereGeometry(0.0088, 14, 12), A.mat.button);
     btn.name = 'button';
-    onTorso(Math.PI / 2, y, 0.0390, btn.position);
+    onTorso(Math.PI / 2, y, 0.0470, btn.position);
     btn.scale.set(1, 1, 0.55);
     btn.lookAt(btn.position.clone().multiplyScalar(2).setY(btn.position.y));
     btn.userData.noOutline = true;
@@ -153,10 +153,10 @@ export function buildOutfit() {
 
   /* ---------------------------------------------------------- pocket ---- */
   const pocketRim = bilinearPatch(
-    onTorso(Math.PI / 2 - 0.66, 1.272, 0.036),
-    onTorso(Math.PI / 2 - 0.30, 1.268, 0.036),
-    onTorso(Math.PI / 2 - 0.30, 1.176, 0.036),
-    onTorso(Math.PI / 2 - 0.66, 1.180, 0.036),
+    onTorso(Math.PI / 2 - 0.66, 1.246, 0.036),
+    onTorso(Math.PI / 2 - 0.30, 1.242, 0.036),
+    onTorso(Math.PI / 2 - 0.30, 1.130, 0.036),
+    onTorso(Math.PI / 2 - 0.66, 1.134, 0.036),
     { uSeg: 12, vSeg: 12, bulge: 0.004, normal: new THREE.Vector3(-0.45, 0, 1) }
   );
   const pocketRimMesh = new THREE.Mesh(pocketRim, A.mat.trimShade);
@@ -165,10 +165,10 @@ export function buildOutfit() {
   g.add(pocketRimMesh);
 
   const pocket = bilinearPatch(
-    onTorso(Math.PI / 2 - 0.645, 1.265, 0.0375),
-    onTorso(Math.PI / 2 - 0.315, 1.261, 0.0375),
-    onTorso(Math.PI / 2 - 0.315, 1.187, 0.0375),
-    onTorso(Math.PI / 2 - 0.645, 1.191, 0.0375),
+    onTorso(Math.PI / 2 - 0.645, 1.239, 0.0375),
+    onTorso(Math.PI / 2 - 0.315, 1.235, 0.0375),
+    onTorso(Math.PI / 2 - 0.315, 1.141, 0.0375),
+    onTorso(Math.PI / 2 - 0.645, 1.145, 0.0375),
     { uSeg: 12, vSeg: 12, bulge: 0.005, normal: new THREE.Vector3(-0.45, 0, 1) }
   );
   const pocketMesh = new THREE.Mesh(pocket, A.mat.trim);
@@ -182,8 +182,8 @@ export function buildOutfit() {
     vSeg: 40,
     point: (u, v, out) => {
       const a = u * TAU;
-      const y = lerp(0.80, 1.030, v);
-      const grow = 0.0155 + 0.010 * smoothstep(1.0, 0.0, v);
+      const y = lerp(0.700, 1.020, v);
+      const grow = 0.0200 + 0.010 * smoothstep(1.0, 0.0, v);
       onTorso(a, y, grow + folds(a, y, 0.0030), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -200,7 +200,7 @@ export function buildOutfit() {
     vSeg: 6,
     point: (u, v, out) => {
       const a = u * TAU;
-      const y = lerp(1.042, 1.078, v);
+      const y = lerp(0.975, 1.015, v);
       onTorso(a, y, 0.026 - 0.004 * v, out);
     },
     uv: (u, v) => [u * 3, v],
@@ -219,10 +219,10 @@ export function buildOutfit() {
       flip: true, // v runs downward here, so the winding must be inverted
       point: (u, v, out) => {
         const a = u * TAU;
-        const scallop = 0.021 * Math.abs(Math.sin(4.5 * a));
-        const hemY = 0.788 - scallop;
-        const y = lerp(0.912, hemY, v);
-        const r = lerp(0.094, 0.092, v);
+        const scallop = 0.030 * Math.abs(Math.sin(4.5 * a));
+        const hemY = 0.700 - scallop;
+        const y = lerp(0.870, hemY, v);
+        const r = lerp(0.101, 0.099, v);
         const rr = r * (1 + 0.13 * smoothstep(0.55, 1.0, v));
         out.set(cx + rr * Math.cos(a), y, rr * Math.sin(a) * 0.94 + 0.004);
       },
@@ -259,10 +259,10 @@ export function buildOutfit() {
         // the cuff sits snug against the arm at the shoulder so the sleeve's
         // open end never shows its hollow interior
         const r =
-          lerp(0.0432, 0.0348, t) +
-          0.0105 * smoothstep(0.0, 0.30, t) +
-          0.0050 * v +
-          0.009 * Math.pow(v, 3);
+          lerp(0.0432, 0.0355, t) +
+          0.0125 * smoothstep(0.0, 0.26, t) +
+          0.0060 * v +
+          0.016 * Math.pow(v, 3);
         out.copy(P).addScaledVector(N, Math.cos(a) * r).addScaledVector(B, Math.sin(a) * r);
       },
       uv: (u, v) => [u * 1.4, v * 1.4],
