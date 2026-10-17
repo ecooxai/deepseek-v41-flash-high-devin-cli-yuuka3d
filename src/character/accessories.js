@@ -167,7 +167,7 @@ export function buildPillow() {
   const mesh = new THREE.Mesh(geo, A.mat.pillow);
   mesh.name = 'pillowMesh';
   mesh.castShadow = true;
-  addOutline(mesh, { thickness: 0.0045 });
+  addOutline(mesh, { thickness: 0.0030 });
   g.add(mesh);
 
   return g;

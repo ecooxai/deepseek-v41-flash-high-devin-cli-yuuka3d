@@ -115,29 +115,31 @@ export function buildHair() {
   /* ================================================================ BACK = */
   // One continuous curtain carries the mass and the outer silhouette — that is
   // what makes drawn hair read as a smooth sheet instead of a bundle of ropes.
+  const curtainPoint = (u, v, out, grow = 0) => {
+    const su = u * 2 - 1;
+    const phi = Math.PI * 1.5 + su * 1.34;
+    const thetaTop = 1.44 - 0.24 * Math.abs(su);
+    const root = headSurface(thetaTop, phi, R * 1.06);
+    const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
+    const tipY = -1.255 + 0.030 * Math.abs(su) + 0.024 * Math.sin(su * 5.4 + 0.4);
+    const tipX = su * (0.190 + 0.030 * Math.abs(su));
+    const tipZ = -0.118 - 0.05 * Math.abs(su);
+    const bulge = (0.052 + 0.026 * Math.abs(su)) * Math.sin(Math.PI * Math.pow(v, 0.85)) + grow;
+    const sway = 0.016 * Math.sin(su * 3.1 + 1.2) * Math.sin(Math.PI * v);
+    return out.set(
+      lerp(root.x, tipX, v) + dir.x * bulge + sway,
+      lerp(root.y, tipY, v),
+      lerp(root.z, tipZ, v) + dir.z * bulge
+    );
+  };
+
   {
     const curtainGeo = surfaceShell({
       uSeg: 104,
       vSeg: 44,
       closed: false,
       flip: true,
-      point: (u, v, out) => {
-        const su = u * 2 - 1;
-        const phi = Math.PI * 1.5 + su * 1.34;
-        const thetaTop = 1.44 - 0.24 * Math.abs(su);
-        const root = headSurface(thetaTop, phi, R * 1.06);
-        const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        const tipY = -1.255 + 0.030 * Math.abs(su) + 0.024 * Math.sin(su * 5.4 + 0.4);
-        const tipX = su * (0.190 + 0.030 * Math.abs(su));
-        const tipZ = -0.118 - 0.05 * Math.abs(su);
-        const bulge = (0.052 + 0.026 * Math.abs(su)) * Math.sin(Math.PI * Math.pow(v, 0.85));
-        const sway = 0.016 * Math.sin(su * 3.1 + 1.2) * Math.sin(Math.PI * v);
-        out.set(
-          lerp(root.x, tipX, v) + dir.x * bulge + sway,
-          lerp(root.y, tipY, v),
-          lerp(root.z, tipZ, v) + dir.z * bulge
-        );
-      },
+      point: (u, v, out) => curtainPoint(u, v, out),
       uv: (u, v) => [u * 3, v * 3],
     });
     paintAlongV(curtainGeo, HAIR_STOPS_SHEET);
@@ -150,7 +152,7 @@ export function buildHair() {
   }
 
   // Broad sheets layered over the curtain for the outer contour.
-  const NS = 9;
+  const NS = 5;
   for (let i = 0; i < NS; i++) {
     const s = (i / (NS - 1)) * 2 - 1;
     const as = Math.abs(s);
@@ -160,7 +162,7 @@ export function buildHair() {
     const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
     const hemWave = 0.020 * Math.sin(s * 2.1 + 0.7);
     const tip = new THREE.Vector3(
-      s * (0.186 + 0.036 * as),
+      s * (0.196 + 0.032 * as),
       -1.228 + 0.032 * as + hemWave,
       -0.112 - 0.048 * as
     );
@@ -173,7 +175,7 @@ export function buildHair() {
     addStrand(
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.078 + 0.020 * as, 0.030, 0.036),
+      sheetW(0.128 + 0.030 * as, 0.036, 0.056),
       sheetT(0.020, 0.012),
       { segs: 44, radial: 14, stops: HAIR_STOPS_SHEET, outline: 0.0030 }
     );
