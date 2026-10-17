@@ -7,9 +7,9 @@ export const META = {
   model: 'DeepSeek V4.1 Flash High',
   tool: 'Devin CLI · three.js',
   subject: 'Yuuka — Pajama Ver.',
-  iteration: 77,
+  iteration: 79,
   maxIterations: 1000,
-  score: 92,
+  score: 94,
 };
 
 /** Anime-ish stylised proportions. Units are metres, origin at the floor. */
@@ -64,7 +64,7 @@ export const PALETTE = {
   slipperSole: 0xbfbfd2,
   bowPink: 0xd4739f,
 
-  halo: 0x23252f,
+  halo: 0x363a4d,
   haloGlow: 0x7d8cff,
 
   pillow: 0xffffff,

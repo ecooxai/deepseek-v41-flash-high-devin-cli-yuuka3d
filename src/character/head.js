@@ -52,20 +52,20 @@ export function buildHead() {
 
   /* ----------------------------------------------------------- ears ---- */
   for (const s of [-1, 1]) {
-    const ear = new THREE.Mesh(new THREE.SphereGeometry(R * 0.3, 20, 16), A.mat.skin);
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(R * 0.24, 20, 16), A.mat.skin);
     ear.name = 'ear';
-    ear.scale.set(0.38, 1.05, 0.8);
-    headSurface(1.62, Math.PI / 2 + s * 1.34, R * 0.93, ear.position);
-    ear.rotation.y = -s * 0.35;
-    ear.rotation.z = s * 0.2;
+    ear.scale.set(0.34, 1.0, 0.78);
+    headSurface(1.66, Math.PI / 2 + s * 1.40, R * 0.90, ear.position);
+    ear.rotation.y = -s * 0.45;
+    ear.rotation.z = s * 0.12;
     g.add(ear);
   }
 
   /* ----------------------------------------------------------- eyes ---- */
-  const eyeTheta = 1.548;
-  const eyePhiOff = 0.318;
-  const eyeW = 0.665;
-  const eyeH = 0.55;
+  const eyeTheta = 1.745;
+  const eyePhiOff = 0.276;
+  const eyeW = 0.600;
+  const eyeH = 0.500;
   for (const s of [-1, 1]) {
     const phiC = Math.PI / 2 + s * eyePhiOff;
     const geo = facePatch({
@@ -84,13 +84,32 @@ export function buildHead() {
     g.add(m);
   }
 
+  /* ---------------------------------------------------------- brows ---- */
+  // Thin arched brows peeking out from under the fringe.
+  for (const s of [-1, 1]) {
+    const geo = facePatch({
+      thetaC: 1.505,
+      phiC: Math.PI / 2 + s * 0.298,
+      dTheta: 0.088,
+      dPhi: 0.330,
+      offset: 0.0016,
+      uSeg: 20,
+      vSeg: 10,
+    });
+    const m = new THREE.Mesh(geo, s < 0 ? A.mat.browL : A.mat.brow);
+    m.name = 'brow' + (s < 0 ? 'L' : 'R');
+    m.renderOrder = 3;
+    m.userData.noOutline = true;
+    g.add(m);
+  }
+
   /* ---------------------------------------------------------- blush ---- */
   for (const s of [-1, 1]) {
     const geo = facePatch({
-      thetaC: 1.80,
-      phiC: Math.PI / 2 + s * 0.58,
-      dTheta: 0.22,
-      dPhi: 0.34,
+      thetaC: 1.985,
+      phiC: Math.PI / 2 + s * 0.470,
+      dTheta: 0.135,
+      dPhi: 0.195,
       offset: 0.001,
       uSeg: 16,
       vSeg: 16,
@@ -104,7 +123,7 @@ export function buildHead() {
 
   /* ---------------------------------------------------------- mouth ---- */
   const mouth = new THREE.Mesh(
-    facePatch({ thetaC: 1.92, phiC: Math.PI / 2, dTheta: 0.125, dPhi: 0.19, offset: 0.0011, uSeg: 16, vSeg: 12 }),
+    facePatch({ thetaC: 2.130, phiC: Math.PI / 2, dTheta: 0.110, dPhi: 0.160, offset: 0.0011, uSeg: 16, vSeg: 12 }),
     A.mat.mouth
   );
   mouth.name = 'mouth';
@@ -113,17 +132,18 @@ export function buildHead() {
   g.add(mouth);
 
   /* ----------------------------------------------------------- nose ---- */
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.058, 14, 12), A.mat.skinSoft);
+  // Anime noses are a suggestion, not a feature — a barely-there bump.
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.030, 12, 10), A.mat.skinSoft);
   nose.name = 'nose';
-  headSurface(1.78, Math.PI / 2, R * 1.035, nose.position);
-  nose.scale.set(0.66, 0.56, 0.95);
+  headSurface(2.020, Math.PI / 2, R * 1.028, nose.position);
+  nose.scale.set(0.85, 0.45, 0.7);
   nose.userData.noOutline = true;
   g.add(nose);
 
   /* ------------------------------------------------ soft face shading -- */
   // gentle contact shading where the fringe falls over the brow
   const fringeShadow = new THREE.Mesh(
-    facePatch({ thetaC: 1.30, phiC: Math.PI / 2, dTheta: 0.24, dPhi: 1.7, offset: 0.0009, uSeg: 28, vSeg: 10 }),
+    facePatch({ thetaC: 1.46, phiC: Math.PI / 2, dTheta: 0.26, dPhi: 1.7, offset: 0.0009, uSeg: 28, vSeg: 10 }),
     new THREE.MeshBasicMaterial({
       color: 0x4a3f78,
       transparent: true,

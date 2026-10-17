@@ -222,8 +222,8 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
   if (y < 0) {
     const u = Math.min(1, -y);
     // slim, smoothly tapering jaw — the anime chin
-    const sx = 1 - 0.30 * Math.pow(u, 1.45);
-    const sz = 1 - 0.26 * Math.pow(u, 1.55);
+    const sx = 1 - 0.40 * Math.pow(u, 1.15);
+    const sz = 1 - 0.28 * Math.pow(u, 1.45);
     X *= sx;
     Z *= sz;
     // the jaw juts forward, giving the chin its profile
@@ -240,10 +240,10 @@ export function headDeform(x, y, z, out = new THREE.Vector3()) {
   if (Z < 0) Z *= 0.94;
 
   const cheek = Math.exp(-Math.pow((y + 0.30) / 0.28, 2)) * Math.exp(-Math.pow(Z / 0.9, 2));
-  X *= 1 + 0.045 * cheek;
+  X *= 1 - 0.030 * cheek;
 
   // overall: an anime head is a narrow oval, not a ball
-  X *= 0.98;
+  X *= 0.84;
 
   return out.set(X, Yy, Z);
 }

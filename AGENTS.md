@@ -89,6 +89,20 @@ tools/
 * **One curtain, then detail strands.** The back of the hair is a single
   continuous `surfaceShell` curtain; layering dozens of equal strands instead
   makes the hem read as a grass skirt rather than drawn hair.
+* **Hair lengths are metres from the head centre.** `headSurface` returns
+  R-scaled vectors while the tip literals are plain metres, so the two live in
+  the same space — but a tip of `-1.25` hangs to the shin, not the hip. The
+  hem now sits at `HEM_Y = -0.412` (world y ≈ 1.14).
+* **Never straight-`lerp` two points on a sphere.** The chord cuts *inside*
+  the surface, so the scalp shell pokes through the fringe. Interpolate the
+  polar angle and re-project with `headSurface` (this is what made the fringe
+  read as a row of teeth).
+* **Outer layers must sit proud of the inner one.** The broad locks were
+  hidden inside the curtain until their outward bulge exceeded the curtain's;
+  the silhouette is carried by the *outermost* surface, so that is the one to
+  tune.
+* `tools/bbox.mjs` prints the world bounding box of every named part — it is
+  how the over-long hair hem was found.
 * **Cel shading.** `toonGradient(steps, softness, floor)` builds the ramp.
   `floor` keeps downward-facing surfaces (jaw, under-chin) from reading grey.
 * Outlines are inverted-hull shells expanded along **vertex normals** in the
@@ -113,22 +127,23 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 77 / 1000 · self-assessed **92 / 100**.
+Iteration 79 / 1000 · self-assessed **94 / 100**.
 
 Known weak spots (in priority order):
 
-1. Hands are still crude — four swept fingers and a thumb read as a mitten at
-   close range.
-2. The side profile is dominated by the hair mass; the face silhouette barely
-   reads from `view=side`.
+1. The back hair is still chunkier than the hand-painted original — the locks
+   are broad ribbons rather than finely separated strands.
+2. Hands read as a mitten at close range; the fingers are four swept tubes.
 3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
-4. The pillow is a rounded slab, not a stitched cushion.
+4. The pillow is a rounded slab with a piping seam, not a stitched cushion.
 5. The side profile is nearly all hair; only a sliver of the face reads.
+6. Legs are near-cylindrical — knees are barely modelled.
 
 Measurement helpers that proved useful when tuning proportions: render with
 `?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette
-width profile against the reference with a small script — several proportion
-fixes came from that rather than from eyeballing renders.
+width profile against the reference; `?flat=1&nooutline=1` to check geometry
+and normals; `tools/bbox.mjs` for part extents; `tools/probe.mjs` to identify
+which mesh owns a pixel.
 
 ## Honest ceiling
 

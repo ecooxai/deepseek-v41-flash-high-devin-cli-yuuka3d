@@ -200,12 +200,12 @@ export function pajamaTexture(repeat = [3, 3]) {
   ctx.fillStyle = hex(PALETTE.pajama);
   ctx.fillRect(0, 0, S, S);
 
-  // gentle woven striping
-  ctx.globalAlpha = 0.5;
-  for (let x = 0; x < S; x += 8) {
-    ctx.fillStyle = x % 16 === 0 ? '#ffffff' : hex(PALETTE.pajamaShade);
-    ctx.globalAlpha = 0.22;
-    ctx.fillRect(x, 0, 4, S);
+  // A whisper of weave so the cloth is not perfectly flat — the reference has
+  // no visible stripes, so this must stay far below the motif contrast.
+  ctx.globalAlpha = 0.055;
+  for (let x = 0; x < S; x += 6) {
+    ctx.fillStyle = x % 12 === 0 ? '#ffffff' : hex(PALETTE.pajamaShade);
+    ctx.fillRect(x, 0, 3, S);
   }
   ctx.globalAlpha = 1;
 
@@ -267,7 +267,7 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   });
   const low = (t) => ({
     x: cx + (t * 2 - 1) * rx * 0.93,
-    y: cy + ry * (0.86 - 0.44 * Math.sin(Math.PI * t) ** 0.7),
+    y: cy + ry * (0.72 - 0.36 * Math.sin(Math.PI * t) ** 0.7),
   });
 
   ctx.beginPath();
@@ -295,8 +295,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // --- iris ------------------------------------------------------------
   const ix = cx;
   const iy = cy - ry * 0.02;
-  const irx = rx * 0.70;
-  const iry = ry * 0.86;
+  const irx = rx * 0.74;
+  const iry = ry * 0.90;
 
   ctx.save();
   ctx.beginPath();
@@ -386,10 +386,10 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
     const p = lid(i / N);
     i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
   }
-  ctx.lineWidth = W * 0.052;
+  ctx.lineWidth = W * 0.044;
   ctx.stroke();
   // crisp inner edge
-  ctx.lineWidth = W * 0.024;
+  ctx.lineWidth = W * 0.020;
   ctx.strokeStyle = '#2b2354';
   ctx.stroke();
   ctx.restore();
@@ -425,17 +425,23 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
 }
 
 /** Eyelid crease + brow, drawn as a separate decal above each eye. */
-export function browTexture(size = 256) {
+export function browTexture(size = 256, { flip = false } = {}) {
   const W = size;
   const H = size;
   const { c, ctx } = canvas(W, H);
-  ctx.strokeStyle = 'rgba(58,45,102,0.55)';
+  ctx.save();
+  if (flip) {
+    ctx.translate(W, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.strokeStyle = 'rgba(58,46,102,0.62)';
   ctx.lineCap = 'round';
-  ctx.lineWidth = W * 0.045;
+  ctx.lineWidth = W * 0.038;
   ctx.beginPath();
-  ctx.moveTo(W * 0.12, H * 0.62);
-  ctx.quadraticCurveTo(W * 0.5, H * 0.26, W * 0.9, H * 0.5);
+  ctx.moveTo(W * 0.10, H * 0.66);
+  ctx.quadraticCurveTo(W * 0.52, H * 0.20, W * 0.94, H * 0.44);
   ctx.stroke();
+  ctx.restore();
   return toTexture(c);
 }
 
@@ -443,9 +449,9 @@ export function mouthTexture(size = 256) {
   const W = size;
   const H = size;
   const { c, ctx } = canvas(W, H);
-  ctx.strokeStyle = 'rgba(176,96,102,0.9)';
+  ctx.strokeStyle = 'rgba(163,74,84,0.95)';
   ctx.lineCap = 'round';
-  ctx.lineWidth = W * 0.055;
+  ctx.lineWidth = W * 0.070;
   ctx.beginPath();
   ctx.moveTo(W * 0.32, H * 0.42);
   ctx.quadraticCurveTo(W * 0.5, H * 0.62, W * 0.68, H * 0.42);
