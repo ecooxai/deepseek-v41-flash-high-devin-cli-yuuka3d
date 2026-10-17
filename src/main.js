@@ -18,6 +18,11 @@ function boot() {
 
   ui.setMessage('sculpting the character…');
   const character = buildCharacter();
+  // Self-shadowing is what gives the flat cel shading any depth at all: the
+  // hair reads as sitting on the shoulders, the arm as sitting on the torso.
+  character.traverse((o) => {
+    if (o.isMesh && !o.userData.isOutline) o.receiveShadow = true;
+  });
   viewer.character = character;
   viewer.scene.add(character);
 

@@ -87,8 +87,8 @@ export class Viewer {
   _buildLights() {
     const scene = this.scene;
 
-    scene.add(new THREE.HemisphereLight(0xdcecff, 0xbcd4ec, 0.74));
-    scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+    scene.add(new THREE.HemisphereLight(0xdcecff, 0xc6dcf2, 0.86));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.30));
 
     const key = new THREE.DirectionalLight(0xfff4ea, 1.28);
     key.position.set(-2.1, 3.4, 2.8);
@@ -101,12 +101,12 @@ export class Viewer {
     key.shadow.camera.top = 2.6;
     key.shadow.camera.bottom = -0.4;
     key.shadow.bias = -0.0012;
-    key.shadow.normalBias = 0.018;
+    key.shadow.normalBias = 0.032;
     key.shadow.radius = 3;
     scene.add(key);
     this.key = key;
 
-    const fill = new THREE.DirectionalLight(0xd6e6ff, 0.42);
+    const fill = new THREE.DirectionalLight(0xd6e6ff, 0.52);
     fill.position.set(3.2, 1.6, 2.0);
     scene.add(fill);
 
