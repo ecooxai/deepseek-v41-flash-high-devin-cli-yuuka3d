@@ -53,18 +53,18 @@ export const ARM_RADIUS = profileFn([
 ]);
 
 const LEG_RADIUS = profileFn([
-  [0.0, 0.0672],
-  [0.10, 0.0656],
-  [0.26, 0.0588],
-  [0.38, 0.0478],
-  [0.46, 0.0408],
-  [0.50, 0.0520],
-  [0.56, 0.0604],
-  [0.64, 0.0540],
-  [0.74, 0.0416],
-  [0.84, 0.0312],
-  [0.93, 0.0272],
-  [1.0, 0.0252],
+  [0.0, 0.0700],
+  [0.10, 0.0684],
+  [0.26, 0.0616],
+  [0.38, 0.0504],
+  [0.46, 0.0436],
+  [0.50, 0.0552],
+  [0.56, 0.0640],
+  [0.64, 0.0576],
+  [0.74, 0.0452],
+  [0.84, 0.0344],
+  [0.93, 0.0300],
+  [1.0, 0.0276],
 ]);
 
 /* ---------------------------------------------------------------- neck -- */
@@ -74,7 +74,7 @@ export function buildNeck() {
   const g = new THREE.Group();
   g.name = 'neck';
   const curve = curveFromPoints(
-    [V3(0, 1.378, -0.004), V3(0, 1.412, 0.002), V3(0, 1.448, 0.006), V3(0, 1.488, 0.006)],
+    [V3(0, 1.376, -0.004), V3(0, 1.412, 0.002), V3(0, 1.452, 0.006), V3(0, 1.498, 0.006)],
     0.5
   );
   const geo = tubeAlongCurve(curve, profileFn([[0, 0.0415], [0.35, 0.0340], [0.75, 0.0292], [1, 0.0292]]), {
@@ -264,40 +264,40 @@ export function buildSlippers() {
     foot.rotation.x = -0.03;
 
     // sole
-    const sole = new THREE.Mesh(puffyBox(0.140, 0.044, 0.272, { seg: 14, round: 0.62, bulge: 0.004 }), A.mat.sole);
+    const sole = new THREE.Mesh(puffyBox(0.116, 0.038, 0.216, { seg: 14, round: 0.62, bulge: 0.004 }), A.mat.sole);
     sole.name = 'sole';
-    sole.position.set(0, 0.016, 0.014);
+    sole.position.set(0, 0.014, 0.012);
     sole.castShadow = true;
     addOutline(sole, { thickness: 0.0028 });
     foot.add(sole);
 
     // fluffy upper (open-back mule)
-    const upper = new THREE.Mesh(puffyBox(0.140, 0.120, 0.214, { seg: 16, round: 0.74, bulge: 0.006 }), A.mat.slipper);
+    const upper = new THREE.Mesh(puffyBox(0.116, 0.098, 0.168, { seg: 16, round: 0.74, bulge: 0.006 }), A.mat.slipper);
     upper.name = 'upper';
-    upper.position.set(0, 0.058, 0.042);
+    upper.position.set(0, 0.050, 0.034);
     upper.castShadow = true;
     addOutline(upper, { thickness: 0.003 });
     foot.add(upper);
 
     // heel cushion
-    const heel = new THREE.Mesh(puffyBox(0.122, 0.098, 0.092, { seg: 12, round: 0.72, bulge: 0.005 }), A.mat.slipper);
+    const heel = new THREE.Mesh(puffyBox(0.102, 0.080, 0.076, { seg: 12, round: 0.72, bulge: 0.005 }), A.mat.slipper);
     heel.name = 'heel';
-    heel.position.set(0, 0.048, -0.058);
+    heel.position.set(0, 0.042, -0.048);
     heel.userData.noOutline = true;
     foot.add(heel);
 
     // pink bow
     const bow = new THREE.Group();
     bow.name = 'slipperBow';
-    bow.position.set(0, 0.122, 0.100);
+    bow.position.set(0, 0.104, 0.080);
     for (const k of [-1, 1]) {
-      const loop = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 12), A.mat.bowPink);
+      const loop = new THREE.Mesh(new THREE.SphereGeometry(0.013, 14, 12), A.mat.bowPink);
       loop.scale.set(1.0, 0.62, 0.72);
-      loop.position.set(k * 0.016, 0.002, 0);
+      loop.position.set(k * 0.013, 0.002, 0);
       loop.rotation.z = k * 0.35;
       bow.add(loop);
     }
-    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 12, 10), A.mat.bowPink);
+    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.0070, 12, 10), A.mat.bowPink);
     knot.position.set(0, 0.004, 0.004);
     knot.scale.set(0.9, 0.9, 1.1);
     bow.add(knot);

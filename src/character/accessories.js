@@ -12,7 +12,7 @@ const R = DIMS.headR;
 
 /** radial swell of the scalp shell, shared with `hair.js` */
 function capSwell(front) {
-  return 1.095 + 0.055 * Math.max(0, -front) + 0.030 * Math.max(0, front);
+  return 1.155 + 0.055 * Math.max(0, -front) + 0.026 * Math.max(0, front);
 }
 
 /* --------------------------------------------------------------- halo --- */
@@ -21,13 +21,16 @@ export function buildHalo() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'halo';
-  g.position.set(0, DIMS.headC + R * 1.87, -0.020);
-  g.rotation.set(0.225, 0, 0.05);
+  // The hoop rides the crown, not the sky: in the reference its centre sits
+  // barely above the top of the skull, so most of the ring is hidden behind
+  // the head and only the two side arcs and the top edge read.
+  g.position.set(0, DIMS.headC + R * 1.74, -0.018);
+  g.rotation.set(0.190, 0, 0.055);
 
   // A thin, wide band seen almost edge-on — the reference halo is a flat
   // hoop, not a fat donut, so the tube stays small against a large radius.
-  const MAJOR = 0.186;
-  const TUBE = 0.0062;
+  const MAJOR = 0.150;
+  const TUBE = 0.0034;
 
   const ring = new THREE.Mesh(new THREE.TorusGeometry(MAJOR, TUBE, 12, 132), A.mat.halo);
   ring.name = 'haloRing';
@@ -57,25 +60,21 @@ export function buildHeadband() {
   // The reference wears a wide white band over the crown — a folded cloth
   // band, not a bonnet: it shows above the fringe and behind the ears.
   const bandGeo = surfaceShell({
-    uSeg: 120,
-    vSeg: 14,
+    uSeg: 128,
+    vSeg: 18,
     point: (u, v, out) => {
       const phi = u * TAU;
       const front = Math.max(0, Math.sin(phi));
-      const away = 1 - front;
-      // A white hood knotted at the crown: it stops above the brow at the
-      // front (the forehead is bare in the reference) and drops past the ears
-      // at the sides and back.
-      const thetaTop = 0.095 + 0.045 * front + 0.004 * Math.sin(phi * 3);
-      const thetaBot =
-        0.700 + 1.180 * Math.abs(Math.cos(phi)) + 0.880 * Math.max(0, -Math.sin(phi)) +
-        0.003 * Math.sin(phi * 3 + 1.1);
+      const back = Math.max(0, -Math.sin(phi));
+      const open = 1 - front;
+      // A kerchief knotted at the crown: a thin band across the brow (tucked
+      // just inside the fringe) that opens out into a wide hood behind and
+      // beside the head, where it reads as the white cloth of the reference.
+      const thetaTop = 0.150 + 0.400 * open;
+      const thetaBot = 0.660 + 0.900 * open;
       const theta = lerp(thetaTop, thetaBot, v);
-      // sits *inside* the fringe at the brow (so the bangs hide it) and
-      // swells past the hair as it swings round to the sides and back
-      // Hidden behind the hair at the brow, visible past it at the sides
-      // and back — the hood is a mass *around* the head, not a cap on top.
-      const rad = R * (1.150 + 0.330 * Math.pow(away, 1.05) + 0.014 * Math.sin(Math.PI * v));
+      const side = Math.abs(Math.cos(phi));
+      const rad = R * (1.196 + 0.280 * side + 0.020 * back + 0.016 * Math.sin(Math.PI * v));
       headSurface(theta, phi, rad, out);
       return out;
     },
@@ -98,42 +97,31 @@ export function buildHeadband() {
   // path, so it has a hole and a pointed tip like real folded cloth.
   const bow = new THREE.Group();
   bow.name = 'bow';
-  bow.position.set(-0.012, R * 1.055, 0.036);
-  bow.rotation.set(-0.66, 0.10, 0.12);
+  // The bow is tied on top of the crown, standing proud of the hair, and
+  // leans forward over the fringe the way a tied ribbon does.
+  bow.position.set(-0.014, R * 1.42, 0.078);
+  bow.rotation.set(-0.20, 0.05, 0.09);
 
   // Each loop is a solid ribbon blade sweeping up and out from the knot,
   // tapering to a point — the way a tied bow is actually drawn. Sweeping a
   // flat ribbon around a closed path instead leaves a hole and reads as a
   // pair of doughnuts.
+  // Each loop is a flattened rounded lobe flanking the knot. A swept ribbon
+  // blade reads as an X or a pair of rabbit ears; a solid lobe reads as a bow.
   for (const s of [-1, 1]) {
-    const blade = curveFromPoints(
-      [
-        [0, 0.004, 0.002],
-        [s * 0.030, 0.020, -0.004],
-        [s * 0.056, 0.038, -0.009],
-        [s * 0.080, 0.054, -0.012],
-      ],
-      0.5
-    );
-    const loop = new THREE.Mesh(
-      hairStrand(
-        blade,
-        (t) => 0.008 + 0.030 * Math.sin(Math.PI * Math.min(1, t * 1.06)) - 0.018 * t * t,
-        (t) => 0.0054 - 0.0026 * t,
-        { segs: 30, radial: 12 }
-      ),
-      bandMat
-    );
+    const loop = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), bandMat);
     loop.name = 'bowLoop';
-    loop.rotation.z = s * 0.10;
+    loop.scale.set(0.066, 0.044, 0.024);
+    loop.position.set(s * 0.055, 0.030, 0.002);
+    loop.rotation.z = s * 0.34;
     loop.castShadow = true;
     loop.userData.noOutline = true;
     bow.add(loop);
     addOutline(loop, { thickness: 0.0024, color: 0x9a9abd });
   }
 
-  const knot = new THREE.Mesh(puffyBox(0.024, 0.021, 0.018, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
-  knot.position.set(0, 0.006, 0.006);
+  const knot = new THREE.Mesh(puffyBox(0.030, 0.026, 0.022, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
+  knot.position.set(0, 0.007, 0.006);
   knot.name = 'bowKnot';
   knot.castShadow = true;
   knot.userData.noOutline = true;
@@ -146,14 +134,14 @@ export function buildHeadband() {
       hairStrand(
         curveFromPoints(
           [
-            [s * 0.006, -0.004, -0.004],
-            [s * 0.017, -0.020, -0.010],
-            [s * 0.024, -0.040, -0.014],
+            [s * 0.007, -0.005, -0.005],
+            [s * 0.020, -0.026, -0.012],
+            [s * 0.030, -0.050, -0.017],
           ].map((q) => new THREE.Vector3(q[0], q[1], q[2])),
           0.5
         ),
-        (t) => 0.009 - 0.005 * t,
-        (t) => 0.0040 - 0.0018 * t,
+        (t) => 0.011 - 0.006 * t,
+        (t) => 0.0046 - 0.0020 * t,
         { segs: 14, radial: 8 }
       ),
       bandMat
@@ -207,8 +195,8 @@ export function pillowGeometry(w, h, d) {
   // A superellipsoid rather than a spherified cube: the cube's six patches
   // leave visible panel creases across the cushion's face.
   const sp = (a, e) => Math.sign(a) * Math.pow(Math.abs(a), e);
-  const OUTLINE_E = 0.30; // in-plane exponent → rounded rectangle
-  const POLE_E = 0.40; // axial exponent → flatter front and back
+  const OUTLINE_E = 0.44; // in-plane exponent → rounded rectangle
+  const POLE_E = 0.52; // axial exponent → flatter front and back
 
   // Weld the poles: `surfaceShell` leaves uSeg coincident vertices at each
   // pole, each with its own normal, which fans out into a visible pinwheel.
@@ -258,12 +246,12 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.208, 0.520, 0.020);
-  g.rotation.set(-0.06, 0.52, -0.44);
+g.position.set(0.178, 0.552, 0.022);
+  g.rotation.set(-0.06, 0.52, -0.40);
 
-  const W = 0.268;
-  const H = 0.372;
-  const D = 0.180;
+  const W = 0.276;
+  const H = 0.450;
+  const D = 0.205;
 
   const pillowGeo = pillowGeometry(W, H, D);
   // Bake a vertical gradient: the cushion is brightest where the key light

@@ -43,6 +43,32 @@ in-app debug switches:
 
 `textures.html` renders every procedural texture for inspection.
 
+### Measuring instead of guessing
+
+Three shell/node helpers exist because eyeballing a render against the
+reference repeatedly sent the work in the wrong direction:
+
+```bash
+node tools/shot.mjs shots/sil.png --view front --w 700 --h 1200 \
+     --url 'http://127.0.0.1:8137/index.html?bg=magenta&hud=0'
+tools/overlay.sh shots/sil.png /tmp/ov.png 900   # reference | render | blend
+tools/profile.sh shots/sil.png 26                # width profile, height-normalised
+```
+
+* `tools/overlay.sh` trims both images to their own silhouette, scales them to
+  the same height and writes a side-by-side **plus a 50 % blend**. The blend is
+  the single most useful artefact in the repo: it shows a proportion error
+  immediately, where a side-by-side hides it.
+* `tools/profile.sh` prints the left/right silhouette extent at 26 evenly
+  spaced heights, as a fraction of figure height, so the two can be diffed
+  numerically.
+* `?hud=0` hides the overlay chrome — without it the HUD's own boxes land in
+  the silhouette and poison both measurements.
+* `?bg=magenta` + `?hud=0` is the pair to use for any silhouette work.
+
+`tools/video.sh` renders the branded turnaround video (shot list in
+`tools/video.mjs`, caption bar + encode in the shell wrapper).
+
 ## Layout
 
 ```
@@ -147,10 +173,54 @@ tools/
   `normalBias ≈ 0.03`) is what makes the hair read as sitting on the
   shoulders — and it needs a matching lift in the hemisphere/ambient fill, or
   the chest under the chin goes black.
+* **`shadeAcrossU` peaks at `u = 0.25`, not `u = 0`.** `hairStrand` builds its
+  cross-section as `A + w·cos(a)·B + h·sin(a)·C`, so `u = 0` / `0.5` are the
+  thin edges and `u = 0.25` is the *outward face*. Peaking the falloff at 0
+  darkens the surface the camera sees and brightens the hidden edge — that bug
+  alone kept the hair two stops darker than its own colour ramp.
+* **`headSurface` puts `x = -cos(phi)·sin(theta)`.** Any lock direction written
+  as `(cos(a), 0, sin(a))` is mirrored, and every lock sweeps across the face.
+  It must be `(-cos(a), 0, sin(a))`.
+* **Paint the hair mass by height, not by `v`.** Each lock runs from a
+  different root to a different tip, so a `v`-keyed ramp puts the gloss band at
+  a different height on every one and the mass loses its highlight.
+  `paintByHeight(geo, stops)` takes world-`y` stops instead.
+* **A sub-range of a ramp is not a ramp.** The fringe occupies only the top
+  0.13 m of the head — exactly where `MASS_RAMP` puts its highlight — so painted
+  from that ramp the bangs came out near-white and vanished against the skin.
+  The fringe needs its own `FRINGE_RAMP`.
+* **Fringe = one sheet; the hanging mass = overlapping locks.** Loose locks
+  over the brow always read as loose strands over the face; a smooth sheet with
+  a pointed lower edge and a parting is what a painted fringe looks like. The
+  reverse is true below the jaw: a sheet there reads as a board.
+* **Every garment detail must track the shirt's own `grow`.** Once the shirt
+  became A-line, a fixed `grow` on the collar/placket/pocket/buttons left them
+  all buried inside it. `shirtGrow(y)` exists so each detail sits proud of the
+  shirt *at that height*.
+* **A tube needs a cap.** The shirt is a closed cylinder, so its top edge left
+  a ring of daylight around the neck. `shirtYoke` slopes the shoulder from the
+  shirt radius onto the neck radius.
+* **Watch for a shadowed local named `g`.** The outfit builder's group is
+  `const g = new THREE.Group()`; a local `const g = shirtGrow(...)` shadows it
+  and the failure mode is a runtime `x.add is not a function` at boot.
 * **Cel shading.** `toonGradient(steps, softness, floor)` builds the ramp.
   `floor` keeps downward-facing surfaces (jaw, under-chin) from reading grey.
 * Outlines are inverted-hull shells expanded along **vertex normals** in the
   vertex shader (`materials.js`), which also works on non-convex shapes.
+
+## Deliverables
+
+```bash
+node tools/showcase.mjs        # branded stills -> showcase/
+tools/video.sh                 # branded turnaround video -> showcase/*.mp4,*.webm
+tools/video.sh --encode-only   # re-encode from video/frames/ without re-rendering
+```
+
+`tools/video.mjs` scripts the camera through a 360° turntable, a face
+close-up, a back three-quarter and a hero push-in, and freezes the idle
+animation so the only motion is the camera. `tools/video.sh` lays a full-width
+black caption bar across the bottom of every frame with the model name in
+large white type and the tool name beneath it, then encodes H.264 + VP9.
 
 ## Deploying
 
@@ -171,41 +241,62 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 90 / 1000 · self-assessed **96 / 100**.
+Iteration 152 / 1000 · self-assessed **93 / 100**.
 
-Known weak spots (in priority order):
+This session rebuilt the model against the reference rather than tuning it:
 
-1. The hair is still broad flat ribbons rather than finely separated strands;
-   the side locks read as flat panels from the front.
-2. Hands read as a mitten at close range; the fingers are four swept tubes.
-3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
-4. The pillow is a superellipsoid cushion with a piping seam and a baked
-   vertical gradient, but it has no gathered corner where the hand grips it.
-5. The side profile is nearly all hair; only a sliver of the face reads.
-6. Legs are near-cylindrical — the knee and calf bumps are barely modelled.
-7. The bow reads as a ribbon bow now, but its loops are still solid lobes
-   rather than folded cloth.
+* **Head** raised to `R = 0.1225` at `headC = 1.575`, which is what the
+  reference's 0.284 m head-to-chin measurement asks for.
+* **Hair** rewritten from a flat sheet into a lock mass (16 broad outer locks +
+  9 inner fillers + front and side locks), each painted from one shared
+  height-keyed ramp, ending at mid-thigh rather than below the knee.
+* **Halo** measured off the reference at radius 0.166 centred 0.213 above the
+  head centre — it floats clear of the crown, it does not hug it.
+* **Bow** rebuilt as two flattened lobes plus a knot; a swept ribbon blade
+  reads as an X or a pair of rabbit ears.
+* **Outfit**: shirt hem moved from 0.962 to **1.005** (measured — the reference
+  shirt is much shorter than it looked), A-line hem that overhangs the bloomers,
+  a shadow band under the hem, a ruffle flounce on the shorts, a shoulder yoke,
+  notched lapels that stop at the V, and a hip drawstring bow.
+* **Pajama print** re-cut: fewer, larger motifs, exactly one tile around the
+  garment.
+* **Slippers** shrunk to a believable mule.
 
-Measurement helpers that proved useful when tuning proportions: render with
-`?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette
-width profile against the reference; `?flat=1&nooutline=1` to check geometry
-and normals; `tools/bbox.mjs` for part extents; `tools/probe.mjs` to identify
-which mesh owns a pixel.
+Honest gaps, in priority order:
 
-Reference landmarks measured off `docs/reference/yuukapa.png` (1111 px per
-metre, feet at y = 2033):
+1. **The hair is a lock mass, not strands.** At close range the individual
+   locks read as broad ribbons; the reference is painted with fine separation.
+   A real fix is a swept-strand system or a strand shader on the shell.
+2. **The kerchief is a smooth blob.** The reference's white cloth has folds and
+   a visible knot; this one is a surface of revolution.
+3. **No cloth drape.** Shirt and shorts are smooth shells with a `folds()`
+   ripple — no folds at the elbows, armpits or hem.
+4. **The face is decals on a deformed sphere**, not a sculpt.
+5. **Hands read as mittens** at close range.
+6. **The side profile is nearly all hair**; the legs are near-cylindrical.
+7. The render is flat-shaded real-time 3D against a hand-painted 2D
+   illustration — that difference does not close with parameter tuning.
 
-| landmark | world y |
-| --- | --- |
-| hair top | 1.693 |
-| halo | 1.777 (radius ≈ 0.19) |
-| bow | 1.75 top, ≈ 0.20 wide |
-| eyes | 1.572 |
-| mouth | 1.506 |
-| shirt hem | 0.918 |
-| shorts hem | 0.714 |
-| hair tips | ≈ 0.59 (mid-thigh) |
-| pillow | 0.71 down to 0.18, ≈ 0.35 wide |
+Reference landmarks measured off `docs/reference/yuukapa.png`. The figure is
+1.72 m from feet (image y = 2033) to hair top, which puts the image at
+**≈ 1090 px per metre**; every number below came from a pixel scan, not from
+eyeballing a crop.
+
+| landmark | world y | how it was measured |
+| --- | --- | --- |
+| halo centre | 1.796 | dark-ring bbox: x 162–543, y 5–70 → r ≈ 0.175 |
+| bow centre | 1.718 | white bbox x 181–464, y 88–232 |
+| hair top | 1.739 | topmost violet pixel |
+| eyes | 1.556 | centre of the eye decal band |
+| chin | 1.452 | bottom of the skin run |
+| shirt hem | 1.005 | horizontal edge in the torso crop |
+| shorts hem | 0.71 | last row containing a blue run > 6 px |
+| hair tips | ≈ 1.00 | last row containing violet |
+| knee | 0.497 | — |
+
+Cross-check with a colour scan rather than an alpha scan: the reference's halo
+is semi-transparent, so `-alpha extract` at reduced size washes it out
+entirely and the top of the silhouette looks like the bow.
 
 ## Honest ceiling
 

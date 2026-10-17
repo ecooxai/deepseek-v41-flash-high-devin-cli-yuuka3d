@@ -399,20 +399,67 @@ export function paintAlongV(geo, stops, { gamma = 1, invert = false } = {}) {
 }
 
 /**
+ * Bake a colour ramp keyed on **world height** rather than on `v`.
+ *
+ * Every lock of the hair mass runs from a different root to a different tip, so
+ * a `v`-keyed ramp puts the highlight band at a different height on each one
+ * and the mass loses its gloss. Keying on `y` gives the whole mass one shared
+ * vertical gradient.
+ *
+ * @param {number[][]} stops  [y, hex] pairs, ascending in y
+ */
+export function paintByHeight(geo, stops, { smooth = 0 } = {}) {
+  const pos = geo.attributes.position;
+  const n = pos.count;
+  const colors = new Float32Array(n * 3);
+  const c = new THREE.Color();
+  const cols = stops.map(([y, h]) => [y, new THREE.Color(h)]);
+  const lo = cols[0][0];
+  const hi = cols[cols.length - 1][0];
+  for (let i = 0; i < n; i++) {
+    let y = pos.getY(i);
+    if (smooth) y = Math.min(hi, Math.max(lo, y));
+    let a = cols[0];
+    let b = cols[cols.length - 1];
+    for (let k = 0; k < cols.length - 1; k++) {
+      if (y >= cols[k][0] && y <= cols[k + 1][0]) {
+        a = cols[k];
+        b = cols[k + 1];
+        break;
+      }
+    }
+    const span = Math.max(1e-6, b[0] - a[0]);
+    c.copy(a[1]).lerp(b[1], clamp01((y - a[0]) / span));
+    colors[i * 3] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  return geo;
+}
+
+/**
  * Multiply a baked vertex-colour ramp by a cross-section falloff.
  *
  * A flat lock is lit as one plane, which reads as a cardboard panel. Fading
  * the colour toward the ribbon's thin edges makes the same geometry read as a
- * rounded strand. `hairStrand` puts `u = 0` on the outward face and `u = 0.25
- * / 0.75` on the edges.
+ * rounded strand.
+ *
+ * `hairStrand` builds its cross-section as `A + w·cos(a)·B + h·sin(a)·C`, so
+ * `u = 0` and `u = 0.5` are the thin edges and **`u = 0.25` is the outward
+ * face** — the one the camera actually sees. The default `phase` therefore
+ * peaks the falloff at 0.25; peaking it at 0 (the original bug) darkens the
+ * visible surface and brightens the hidden edge, which is what kept the hair
+ * two stops darker than its own colour ramp.
  */
-export function shadeAcrossU(geo, { base = 0.66, gain = 0.34, phase = 0 } = {}) {
+export function shadeAcrossU(geo, { base = 0.74, gain = 0.26, phase = -0.25, curve = 0.6 } = {}) {
   const uv = geo.attributes.uv;
   const col = geo.attributes.color;
   if (!col || !uv) return geo;
   for (let i = 0; i < col.count; i++) {
     const u = uv.getX(i);
-    const f = base + gain * Math.max(0, Math.cos((u + phase) * TAU));
+    const c = 0.5 + 0.5 * Math.cos((u + phase) * TAU);
+    const f = base + gain * Math.pow(c, curve);
     col.setXYZ(i, col.getX(i) * f, col.getY(i) * f, col.getZ(i) * f);
   }
   col.needsUpdate = true;

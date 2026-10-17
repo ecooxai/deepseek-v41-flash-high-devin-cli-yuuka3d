@@ -1,50 +1,71 @@
 /**
  * Hair.
  *
- * Built as three overlapping layers, the way a 2D anime haircut is drawn:
- *   1. a sculpted scalp shell that also forms the fringe silhouette,
- *   2. broad flat "sheets" that give the mass and the outer contour,
- *   3. thin accent strands layered on top for detail and separation.
+ * The mass is built the way a 2D anime haircut is drawn: as a set of broad
+ * overlapping locks that leave the crown together and fall to a layered hem of
+ * pointed tips, rather than as one continuous sheet. A sheet always reads as a
+ * board because its outline is a straight line; overlapping locks give a
+ * silhouette that swells and necks the way painted hair does.
  *
- * Everything is coloured root→tip through baked vertex colours, and the scalp
- * carries a bright sheen band like a hair highlight.
+ * Layers:
+ *   1. scalp cap — the skull covering, also the fringe's root,
+ *   2. the back mass — `NLOCK` broad locks rooted just under the crown,
+ *   3. front locks — the two or three that fall over each shoulder,
+ *   4. the fringe — bangs radiating from the parting,
+ *   5. the sheen band — the anime highlight ring.
+ *
+ * Every lock is painted from one shared height-keyed ramp so the whole mass
+ * carries a single gloss gradient instead of a different one per lock.
  */
 import * as THREE from 'three';
 import { DIMS } from '../config.js';
 import { assets } from '../assets.js';
 import { addOutline } from '../materials.js';
-import { headSurface, hairStrand, curveFromPoints, surfaceShell, paintAlongV, shadeAcrossU, lerp, smoothstep, TAU } from '../geometry.js';
+import {
+  headSurface, hairStrand, curveFromPoints, surfaceShell,
+  paintAlongV, paintByHeight, shadeAcrossU, lerp, smoothstep, TAU,
+} from '../geometry.js';
 
 const R = DIMS.headR;
+const HEAD_C = DIMS.headC;
 
-const HAIR_STOPS = [
-  [0.0, 0x7876be],
-  [0.3, 0x8c8ad2],
-  [0.62, 0xa09ee4],
-  [0.86, 0xb6b4f0],
-  [1.0, 0xc8c6f8],
+/**
+ * The mass is painted by world height so every lock shares one gradient:
+ * dark at the crown, a bright gloss band where the light catches it, then a
+ * slow fall into the tips.
+ */
+const MASS_RAMP = [
+  [HEAD_C + 0.105, 0x827db0],
+  [HEAD_C + 0.055, 0xa4a0cc],
+  [HEAD_C + 0.020, 0xeae6f1],
+  [HEAD_C - 0.010, 0xc6c3de],
+  [HEAD_C - 0.090, 0xb6b2d2],
+  [HEAD_C - 0.300, 0xaaa7c8],
+  [HEAD_C - 0.520, 0x9f9cbe],
+  [HEAD_C - 0.700, 0xa7a3c2],
+  [HEAD_C - 0.900, 0xbebad8],
 ];
-const HAIR_STOPS_DEEP = [
-  [0.0, 0x6967ae],
-  [0.4, 0x7b79c2],
-  [0.75, 0x8f8dd6],
-  [1.0, 0xa5a3e8],
+
+/**
+ * The fringe only occupies the top 0.13 m of the head, which is exactly where
+ * `MASS_RAMP` puts its gloss band — painted from that ramp the bangs come out
+ * almost white and vanish against the skin. It gets its own gradient.
+ */
+const FRINGE_RAMP = [
+  [HEAD_C + 0.170, 0x6b67b0],
+  [HEAD_C + 0.130, 0x807dc6],
+  [HEAD_C + 0.090, 0x9592d6],
+  [HEAD_C + 0.045, 0xa6a3e2],
+  [HEAD_C + 0.000, 0xb4b1ea],
 ];
-// The outer locks carry a bright band near the crown — the classic anime
-// hair highlight — so the mass reads as gloss rather than flat colour.
-const HAIR_STOPS_LOCK = [
-  [0.0, 0x6664ac],
-  [0.16, 0x7a78c2],
-  [0.30, 0xaeacee],
-  [0.40, 0x8a88d2],
-  [0.70, 0x7a78b8],
-  [1.0, 0x9694d8],
-];
-const HAIR_STOPS_SHEET = [
-  [0.0, 0x605ea6],
-  [0.35, 0x7270b8],
-  [0.7, 0x8684ca],
-  [1.0, 0x9e9ce0],
+
+/** The scalp sits higher and darker than the hanging mass. */
+const CAP_RAMP = [
+  [HEAD_C + 0.115, 0x7b77ac],
+  [HEAD_C + 0.060, 0xa09cc8],
+  [HEAD_C + 0.022, 0xece8f3],
+  [HEAD_C - 0.020, 0xbfbcd8],
+  [HEAD_C - 0.120, 0xa4a1c4],
 ];
 
 function mulberry32(a) {
@@ -59,31 +80,57 @@ function mulberry32(a) {
 
 const V = (x, y, z) => [x, y, z];
 
-function addStrand(group, pts, widthFn, thickFn, { stops = HAIR_STOPS, segs = 40, radial = 12, outline = 0.0028, round = 0.22 } = {}) {
-  const curve = curveFromPoints(pts, 0.5);
-  const geo = hairStrand(curve, widthFn, thickFn, { segs, radial });
-  paintAlongV(geo, stops);
+/** radial swell of the scalp shell, shared with `accessories.js` */
+function capSwell(front) {
+  return 1.155 + 0.055 * Math.max(0, -front) + 0.026 * Math.max(0, front);
+}
+
+/**
+ * Flat lock profile: broad through the body, closing to a true point at the
+ * tip (an open tube shows its hollow interior).
+ */
+const tipTaper = (t) => 1 - Math.pow(Math.max(0, (t - 0.70) / 0.30), 0.78);
+const lockW = (a, b, c) => (t) =>
+  (a + b * Math.sin(Math.PI * Math.min(1, t * 1.02)) - c * t * t) * tipTaper(t);
+const lockT = (a, b) => (t) => (a - b * t) * tipTaper(t);
+
+/**
+ * One hanging lock: it leaves the scalp at `thetaRoot`, drapes over the skull
+ * to the hairline, then falls to a tip at `hemR`/`hemY` (head-relative metres).
+ */
+function lockPoints(a, { thetaRoot, thetaHair, hemR, hemY, bulge = 0.026, tuck = 0 }) {
+  const front = Math.sin(a);
+  const swell = capSwell(front);
+  // `headSurface` puts x = -cos(phi)·sin(theta), so the outward direction has to
+  // use the same sign or every lock crosses the face.
+  const dir = new THREE.Vector3(-Math.cos(a), 0, Math.sin(a));
+
+  const root = headSurface(thetaRoot, a, R * (swell + 0.010));
+  const hair = headSurface(thetaHair, a, R * (swell + 0.030));
+  const tip = new THREE.Vector3(dir.x * hemR, hemY, dir.z * hemR);
+  // A slight tuck keeps the lock against the body on the way down, so the mass
+  // necks at the waist instead of hanging as a straight-sided curtain.
+  const tuckAt = (t) => dir.clone().multiplyScalar(tuck * Math.sin(Math.PI * Math.min(1, t * 0.92)));
+
+  const p1 = hair.clone().lerp(tip, 0.26).addScaledVector(dir, bulge * 0.45);
+  const p2 = hair.clone().lerp(tip, 0.58).addScaledVector(dir, bulge * 0.95);
+  const p3 = hair.clone().lerp(tip, 0.85).addScaledVector(dir, bulge * 0.70);
+  for (const [p, t] of [[p1, 0.26], [p2, 0.58], [p3, 0.85]]) p.sub(tuckAt(t));
+
+  return [root, hair, p1, p2, p3, tip];
+}
+
+function addLock(group, pts, widthFn, thickFn, { segs = 42, radial = 14, outline = 0.0011, round = 0.34 } = {}) {
+  const geo = hairStrand(curveFromPoints(pts.map((p) => [p.x, p.y, p.z]), 0.5), widthFn, thickFn, { segs, radial });
+  paintByHeight(geo, MASS_RAMP, { smooth: 1 });
   if (round > 0) shadeAcrossU(geo, { base: 1 - round, gain: round });
   const mesh = new THREE.Mesh(geo, assets().mat.hair);
-  mesh.name = 'strand';
+  mesh.name = 'lock';
   mesh.castShadow = true;
   mesh.userData.noOutline = true;
   group.add(mesh);
   if (outline > 0) addOutline(mesh, { thickness: outline, color: 0x3a3870 });
   return mesh;
-}
-
-/**
- * Flat lock profile: broad through the body, closing to a true point at the
- * tip (so strands are capped, not open tubes).
- */
-const tipTaper = (t) => 1 - Math.pow(Math.max(0, (t - 0.74) / 0.26), 0.85);
-const sheetW = (a, b, c) => (t) => (a + b * Math.sin(Math.PI * Math.min(1, t * 1.06)) - c * t * t) * tipTaper(t);
-const sheetT = (a, b) => (t) => (a - b * t) * tipTaper(t);
-
-/** radial swell of the scalp shell, shared with the sheen band */
-function capSwell(front) {
-  return 1.095 + 0.055 * Math.max(0, -front) + 0.030 * Math.max(0, front);
 }
 
 export function buildHair() {
@@ -92,230 +139,143 @@ export function buildHair() {
   const rnd = mulberry32(20261017);
 
   /* ------------------------------------------------------- scalp shell -- */
+  // Covers the skull from the crown down past the hairline at the back and
+  // sides; at the front it stops above the brow so the fringe can sit on it.
   const capGeo = surfaceShell({
-    uSeg: 132,
-    vSeg: 52,
+    uSeg: 148,
+    vSeg: 56,
     point: (u, v, out) => {
       const phi = u * TAU;
       const front = Math.sin(phi);
-      // pointed fringe edge: the shell itself is the fringe
-      const wave = 0.055 * Math.abs(Math.sin((phi - Math.PI / 2) * 7)) * Math.max(0, front);
-      const thetaMax = 2.22 - 0.99 * front + wave;
+      const wave = 0.045 * Math.abs(Math.sin((phi - Math.PI / 2) * 6)) * Math.max(0, front);
+      const thetaMax = 2.30 - 1.02 * front + wave;
       const theta = 0.004 + v * (thetaMax - 0.004);
-      const swell = capSwell(front);
-      headSurface(theta, phi, R * swell, out);
+      headSurface(theta, phi, R * capSwell(front), out);
       const yn = out.y / R;
-      if (yn > 0) out.y *= 1 + 0.035 * yn;
+      if (yn > 0) out.y *= 1 + 0.030 * yn;
     },
     uv: (u, v) => [u * 5, v * 3],
   });
-  paintAlongV(capGeo, [
-    [0.0, 0x6b69b4],
-    [0.16, 0x807ec8],
-    [0.30, 0xa9a7e2],
-    [0.48, 0x7d7bc4],
-    [1.0, 0x6462a8],
-  ]);
+  paintByHeight(capGeo, CAP_RAMP, { smooth: 1 });
   const cap = new THREE.Mesh(capGeo, assets().mat.hair);
   cap.name = 'hairCap';
   cap.castShadow = true;
   cap.userData.noOutline = true;
   g.add(cap);
-  addOutline(cap, { thickness: 0.0028, color: 0x3a3870 });
+  addOutline(cap, { thickness: 0.0026, color: 0x3a3870 });
 
-  /* ================================================================ BACK = */
-  // Two layers. The inner curtain hugs the head and supplies the mass; the
-  // outer locks sit proud of it and carry the silhouette, each ending at a
-  // different height so the hem reads as layered points rather than a cut.
-  //
-  // Lengths are in metres from the head centre, so the hem lands just below
-  // the hip (world y ≈ 1.05) the way the reference does.
-  const HEM_Y = -1.100;
+  /* =============================================================== MASS = */
+  // Broad locks from the crown, around the back, stopping short of the face.
+  // The coverage is 224°: the front 136° is left to the fringe and the side
+  // locks, because hair does not hang in front of the chest.
+  const NLOCK = 16;
+  const A0 = Math.PI / 2 + 1.24;
+  const SPAN = TAU - 2.48;
+  const HEM = -0.505; // head-relative; ≈ world 1.07, just below the waist
 
-  {
-    const curtainGeo = surfaceShell({
-      uSeg: 96,
-      vSeg: 40,
-      closed: false,
-      flip: true,
-      point: (u, v, out) => {
-        const su = u * 2 - 1;
-        const as = Math.abs(su);
-        const phi = Math.PI * 1.5 + su * 1.30;
-        const root = headSurface(1.02 - 0.28 * su * su, phi, R * 1.06);
-        const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        const ev = Math.pow(v, 1.7);
-        const tipX = dir.x * (0.112 - 0.028 * su * su);
-        const tipZ = dir.z * 0.104 - 0.020;
-        // The mass stands further off the back than it spreads sideways, so
-        // the side profile has depth instead of reading as a flat board.
-        const bulge = (0.024 + 0.016 * (1 - as)) * smoothstep(0.10, 0.62, v);
-        return out.set(
-          lerp(root.x, tipX, ev) + dir.x * bulge,
-          lerp(root.y, HEM_Y - 0.030 - 0.030 * as, v),
-          lerp(root.z, tipZ, ev) + dir.z * bulge * 1.85
-        );
-      },
-      uv: (u, v) => [u * 3, v * 3],
-    });
-    paintAlongV(curtainGeo, HAIR_STOPS_SHEET);
-    const curtain = new THREE.Mesh(curtainGeo, assets().mat.hair);
-    curtain.name = 'hairCurtain';
-    curtain.castShadow = true;
-    curtain.userData.noOutline = true;
-    g.add(curtain);
-    addOutline(curtain, { thickness: 0.0022, color: 0x3a3870 });
-  }
-
-  /* ------------------------------------------------------ outer shell -- */
-  // The silhouette is a single ridged shell rather than the free edges of
-  // loose ribbons: separate locks always leave hard straight boundaries at
-  // the outline, which is what made the hair read as a board.
-  {
-    const NLOCK = 9;
-    const shellGeo = surfaceShell({
-      uSeg: 220,
-      vSeg: 64,
-      closed: false,
-      flip: true,
-      point: (u, v, out) => {
-        const su = u * 2 - 1;
-        const as = Math.abs(su);
-        const phi = Math.PI * 1.5 + su * 1.62;
-        const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
-        const root = headSurface(1.16 - 0.26 * as, phi, R * 1.165);
-        const hemR = 0.124 - 0.016 * Math.pow(as, 1.6) + 0.016 * Math.sin(su * 3.1 + 0.7);
-        const hemY = HEM_Y + 0.070 * Math.pow(as, 1.7) + 0.048 * Math.sin(su * 4.4 + 1.2);
-        const ev = Math.pow(v, 2.1);
-        // lock ridges: the grooves between them carry the strand separation
-        const ridge = 0.016 * Math.cos(su * Math.PI * NLOCK);
-        const bulge = (0.026 + 0.016 * (1 - as)) * smoothstep(0.12, 0.70, v);
-        const r = bulge + ridge;
-        return out.set(
-          lerp(root.x, dir.x * hemR, ev) + dir.x * r,
-          lerp(root.y, hemY, v),
-          lerp(root.z, dir.z * 0.116 - 0.024, ev) + dir.z * r * 1.7
-        );
-      },
-      uv: (u, v) => [u, v],
-    });
-    paintAlongV(shellGeo, [
-      [0.0, 0x6664ac],
-      [0.13, 0x7d7bc4],
-      [0.25, 0xa8a6e0],
-      [0.36, 0x807ec8],
-      [0.62, 0x6e6cb2],
-      [1.0, 0x8a88cc],
-    ]);
-    {
-      const col = shellGeo.attributes.color;
-      const uv = shellGeo.attributes.uv;
-      for (let i = 0; i < col.count; i++) {
-        const su = uv.getX(i) * 2 - 1;
-        const f = 0.62 + 0.38 * Math.cos(su * Math.PI * NLOCK);
-        col.setXYZ(i, col.getX(i) * f, col.getY(i) * f, col.getZ(i) * f);
-      }
-      col.needsUpdate = true;
-    }
-    const shell = new THREE.Mesh(shellGeo, assets().mat.hairShell);
-    shell.name = 'hairShell';
-    shell.castShadow = true;
-    shell.userData.noOutline = true;
-    g.add(shell);
-    addOutline(shell, { thickness: 0.0022, color: 0x3a3870 });
-  }
-
-  // Outer locks: these are what you actually see, so they vary in width and
-  // length and sit slightly proud of the curtain.
-  const NL = 9;
-  for (let i = 0; i < NL; i++) {
-    const s0 = (i / (NL - 1)) * 2 - 1;
-    const as = Math.abs(s0);
+  for (let i = 0; i < NLOCK; i++) {
+    const u = i / (NLOCK - 1);
     const j = rnd() - 0.5;
-    const phi0 = Math.PI * 1.5 + s0 * 1.30 + 0.045 * j;
-    const root = headSurface(1.12 - 0.24 * as + 0.05 * j, phi0, R * 1.150);
-    const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    // Outer locks end higher and closer in, so the mass tapers to a rounded
-    // silhouette instead of a straight-sided slab.
-    const hemY = HEM_Y - 0.070 + 0.055 * Math.sin(i * 1.6 + 0.6) + 0.070 * Math.pow(as, 1.7) + 0.012 * j;
-    const hemR = 0.128 - 0.018 * Math.pow(as, 1.6) + 0.012 * Math.sin(i * 1.35 + 2.2);
-    const tip = new THREE.Vector3(dir.x * hemR, hemY, dir.z * 0.116 - 0.024);
-    const p1 = root.clone().lerp(tip, 0.24).addScaledVector(dir, 0.028 + 0.010 * as);
-    p1.z += dir.z * 0.030;
-    const p2 = root.clone().lerp(tip, 0.58).addScaledVector(dir, 0.040 + 0.020 * as);
-    p2.z += dir.z * 0.045;
-    const p3 = root.clone().lerp(tip, 0.86).addScaledVector(dir, 0.026 + 0.020 * as);
-    p3.z += dir.z * 0.022;
-    addStrand(
-      g,
-      [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.072 + 0.018 * as, 0.056, 0.038),
-      sheetT(0.030, 0.019),
-      { segs: 44, radial: 16, stops: HAIR_STOPS_LOCK, outline: 0.0000, round: 0.42 }
-    );
+    const a = A0 + u * SPAN;
+    const front = Math.sin(a);
+    const side = Math.abs(Math.cos(a));
+
+    const thetaRoot = 0.80 + 0.26 * Math.max(0, -front) + 0.20 * side + 0.05 * j;
+    const thetaHair = 1.38 + 0.34 * Math.max(0, -front) + 0.06 * j;
+
+    // Sides flare past the shoulders, the back hangs closer in; every tip is
+    // a slightly different length so the hem reads as layered points.
+    const hemR = 0.094 + 0.062 * Math.pow(side, 1.25) + 0.009 * j;
+    const hemY = HEM + 0.075 * Math.pow(side, 1.6) + 0.030 * Math.sin(i * 1.15 + 0.7) + 0.022 * j;
+
+    const pts = lockPoints(a, {
+      thetaRoot,
+      thetaHair,
+      hemR,
+      hemY,
+      bulge: 0.020 + 0.012 * side,
+      tuck: 0.034 + 0.018 * side,
+    });
+
+    const w = 0.058 + 0.022 * side + 0.008 * j;
+    addLock(g, pts, lockW(w, 0.026, 0.030), lockT(0.026, 0.014), {
+      segs: 44,
+      radial: 14,
+      outline: 0.0011,
+      round: 0.36,
+    });
   }
 
-  // A few thin locks with the light ramp so the mass is not one flat sheet.
-  for (let i = 0; i < 6; i++) {
-    const s0 = (i / 5) * 2 - 1;
-    const as = Math.abs(s0);
-    const j = rnd() - 0.5;
-    const phi0 = Math.PI * 1.5 + s0 * 1.18 + 0.08 * j;
-    const root = headSurface(0.96 - 0.24 * as, phi0, R * 1.205);
-    const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const tip = new THREE.Vector3(dir.x * 0.206, HEM_Y + 0.045 + 0.04 * as, dir.z * 0.120 - 0.024);
-    const p1 = root.clone().lerp(tip, 0.30).addScaledVector(dir, 0.052);
-    p1.z += dir.z * 0.052;
-    const p2 = root.clone().lerp(tip, 0.66).addScaledVector(dir, 0.050);
-    p2.z += dir.z * 0.062;
-    const p3 = root.clone().lerp(tip, 0.88).addScaledVector(dir, 0.022);
-    p3.z += dir.z * 0.030;
-    addStrand(
-      g,
-      [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.040 + 0.014 * as, 0.016, 0.020),
-      sheetT(0.013, 0.009),
-      { segs: 36, radial: 12, stops: HAIR_STOPS, outline: 0.0006, round: 0.36 }
-    );
-  }
-
-  // 3) short filler between the scalp shell and the long mass
+  /* ------------------------------------------------------ second layer -- */
+  // A sparse inner layer sitting *inside* the outer locks: it fills the gaps
+  // that the outer layer's pointed hem leaves, and darkens the mass.
   for (let i = 0; i < 9; i++) {
-    const s = (i / 6) * 2 - 1;
-    const phi0 = Math.PI * 1.5 + s * 1.3;
-    const root = headSurface(1.34, phi0, R * 1.175);
-    const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const tip = new THREE.Vector3(dir.x * 0.150, -0.28, dir.z * 0.080 - 0.02);
-    const p1 = root.clone().lerp(tip, 0.5).addScaledVector(dir, 0.020);
-    addStrand(
-      g,
-      [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.048, 0.020, 0.024),
-      sheetT(0.017, 0.010),
-      { segs: 20, radial: 12, stops: HAIR_STOPS_DEEP, outline: 0.0006, round: 0.40 }
-    );
+    const u = i / 8;
+    const j = rnd() - 0.5;
+    const a = A0 + 0.10 + u * (SPAN - 0.20);
+    const front = Math.sin(a);
+    const side = Math.abs(Math.cos(a));
+    const pts = lockPoints(a, {
+      thetaRoot: 0.94 + 0.24 * Math.max(0, -front) + 0.10 * j,
+      thetaHair: 1.46 + 0.30 * Math.max(0, -front),
+      hemR: 0.084 + 0.052 * Math.pow(side, 1.4) + 0.008 * j,
+      hemY: HEM - 0.015 + 0.060 * Math.pow(side, 1.6) + 0.04 * j,
+      bulge: 0.022,
+      tuck: 0.030,
+    });
+    addLock(g, pts, lockW(0.070 + 0.014 * side, 0.020, 0.028), lockT(0.022, 0.012), {
+      segs: 34,
+      radial: 12,
+      outline: 0.0007,
+      round: 0.30,
+    });
+  }
+
+  /* ======================================================= FRONT LOCKS = */
+  // The locks that fall beside the face. They must leave the skull at the
+  // temple, where `|x| = sin(theta)·0.72·R` is already wider than the cheek —
+  // rooted higher up the head they sweep straight across the eye.
+  for (const s of [-1, 1]) {
+    for (let k = 0; k < 3; k++) {
+      const j = rnd() - 0.5;
+      const a = Math.PI / 2 + s * (1.30 + 0.20 * k + 0.04 * j);
+      const pts = lockPoints(a, {
+        thetaRoot: 1.30 + 0.10 * k + 0.04 * j,
+        thetaHair: 1.54 + 0.08 * k,
+        hemR: 0.140 + 0.026 * k + 0.009 * j,
+        hemY: -0.26 - 0.13 * k - 0.06 * j,
+        bulge: 0.018,
+        tuck: 0.014,
+      });
+      addLock(g, pts, lockW(0.050 + 0.010 * k, 0.022, 0.026), lockT(0.024, 0.013), {
+        segs: 40,
+        radial: 14,
+        outline: 0.0012,
+        round: 0.38,
+      });
+    }
   }
 
   /* ------------------------------------------------------- sheen band -- */
-  // The classic anime hair highlight: a light zig-zag ring where the hair
-  // catches the key light.
+  // The classic anime highlight: a light zig-zag ring where the hair catches
+  // the key light, broken up so it does not read as a painted stripe.
   {
     const sheenGeo = surfaceShell({
-      uSeg: 150,
+      uSeg: 170,
       vSeg: 5,
       point: (u, v, out) => {
-        const phi = Math.PI / 2 + (u - 0.5) * 3.05;
+        const phi = Math.PI / 2 + (u - 0.5) * 3.35;
         const front = Math.sin(phi);
-        const zig = 0.040 * Math.sin(u * Math.PI * 6) * (0.55 + 0.45 * Math.cos((u - 0.5) * Math.PI));
-        const theta = 0.62 + zig + v * 0.105;
-        headSurface(theta, phi, R * (capSwell(front) + 0.050), out);
+        const zig = 0.048 * Math.sin(u * Math.PI * 7) * (0.5 + 0.5 * Math.cos((u - 0.5) * Math.PI * 1.1));
+        const theta = 0.60 + zig + v * 0.115;
+        headSurface(theta, phi, R * (capSwell(front) + 0.055), out);
       },
       uv: (u, v) => [u * 6, v],
     });
     paintAlongV(sheenGeo, [
-      [0.0, 0x4a4890],
-      [0.5, 0x6f6dbe],
-      [1.0, 0x45438a],
+      [0.0, 0x4f4b90],
+      [0.5, 0x8f8cd8],
+      [1.0, 0x4a4690],
     ], { invert: true });
     const sheen = new THREE.Mesh(sheenGeo, assets().mat.hair);
     sheen.name = 'hairSheen';
@@ -325,78 +285,65 @@ export function buildHair() {
   }
 
   /* ============================================================= FRINGE = */
-  // The bangs are drawn as locks radiating from a parting right of centre,
-  // not as one sheet: a single shell can only ever read as a helmet.
+  // The bangs are ONE sheet, not a set of strands: a painted fringe is a
+  // smooth mass with a pointed lower edge and a parting that lifts it clear of
+  // the brow. Loose locks here always read as loose strands over the face.
   {
-    const PART = 0.40; // parting position, in `su` units (+1 = viewer's right)
-    const NF = 12;
-    for (let i = 0; i < NF; i++) {
-      const u = i / (NF - 1);
-      const suT = -1.06 + u * 1.66;
-      const thetaT = 1.345 + 0.330 * Math.pow(1 - u, 1.30) + 0.040 * Math.sin(i * 1.7 + 0.4);
-      const pts = [];
-      const n = 8;
-      for (let k = 0; k <= n; k++) {
-        const t = k / n;
-        const su = lerp(PART, suT, Math.pow(t, 1.15));
-        // The locks pull tight at the parting, which is what leaves the
-        // triangle of bare forehead the reference shows there.
-        const thTop = 0.185 + 0.640 * Math.exp(-Math.pow((su - PART) / 0.46, 2));
-        const th = lerp(thTop, thetaT, Math.pow(t, 0.85));
-        const phi = Math.PI / 2 + su * 1.15;
-        const r = R * (capSwell(Math.sin(phi)) + 0.030 + 0.012 * Math.sin(Math.PI * t));
-        const pt = headSurface(th, phi, r);
-        pts.push([pt.x, pt.y, pt.z]);
-      }
-      addStrand(g, pts, sheetW(0.026, 0.011, 0.016), sheetT(0.010, 0.006), {
-        segs: 34,
-        radial: 12,
-        stops: i % 2 === 0 ? HAIR_STOPS_LOCK : HAIR_STOPS,
-        outline: 0.0006,
-        round: 0.30,
-      });
-    }
+    const PART = 0.42; // parting position in `su` units (+1 = viewer's right)
+    const fringeGeo = surfaceShell({
+      uSeg: 168,
+      vSeg: 24,
+      closed: false,
+      point: (u, v, out) => {
+        const su = -1.34 + u * 2.32;
+        const phi = Math.PI / 2 + su * 1.02;
+        const front = Math.sin(phi);
+        // the parting lifts the sheet, leaving the triangle of bare forehead
+        const dip = 0.250 * Math.exp(-Math.pow((su - PART) / 0.58, 2));
+        const thetaTop = 0.580 + 0.030 * front;
+        // pointed tips: a slow zig-zag along the hem
+        const thetaBot = 1.300 - dip + 0.042 * Math.abs(Math.sin(u * Math.PI * 6.0));
+        const theta = lerp(thetaTop, thetaBot, v);
+        // fine strand grooves so the sheet is not one flat plate
+        const groove = 0.004 * Math.sin(u * Math.PI * 11 + v * 1.5);
+        const r = R * (capSwell(front) + 0.052 + 0.022 * Math.sin(Math.PI * v) + groove);
+        headSurface(theta, phi, r, out);
+      },
+      uv: (u, v) => [u * 5, v * 2],
+    });
+    paintByHeight(fringeGeo, FRINGE_RAMP, { smooth: 1 });
+    shadeAcrossU(fringeGeo, { base: 0.86, gain: 0.14, curve: 0.5 });
+    const fringe = new THREE.Mesh(fringeGeo, assets().mat.hair);
+    fringe.name = 'fringe';
+    fringe.castShadow = true;
+    fringe.userData.noOutline = true;
+    g.add(fringe);
+    addOutline(fringe, { thickness: 0.0012, color: 0x3a3870 });
   }
 
-  /* ========================================================= SIDE LOCKS = */
+  /* ======================================================= SIDE LOCKS = */
+  // The locks in front of the ears: they close the gap between the fringe and
+  // the mass and give the face its frame. Rooted at the temple for the same
+  // reason as the front locks.
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 4; k++) {
-      const phi0 = Math.PI / 2 + s * (1.16 + k * 0.155 + 0.03 * rnd());
-      const theta0 = 0.72 + k * 0.14 + 0.05 * rnd();
-      const root = headSurface(theta0, phi0, R * 1.155);
-      const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-      const tipY = -0.36 - 0.105 * k - 0.040 * rnd();
-      const tipX = s * (0.068 + 0.022 * k + 0.010 * rnd());
-      const tipZ = 0.004 - 0.030 * k;
-      const tip = new THREE.Vector3(tipX, tipY, tipZ);
-      const p1 = root.clone().lerp(tip, 0.30).addScaledVector(dir, 0.020);
-      p1.z += 0.012;
-      const p2 = root.clone().lerp(tip, 0.62).addScaledVector(dir, 0.012);
-      const p3 = root.clone().lerp(tip, 0.86).addScaledVector(dir, 0.004);
-      addStrand(
-        g,
-        [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-        sheetW(0.040, 0.018, 0.024),
-        sheetT(0.017, 0.011),
-        { segs: 34, radial: 14, stops: k === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0006, round: 0.34 }
-      );
+    for (let k = 0; k < 3; k++) {
+      const j = rnd() - 0.5;
+      const a = Math.PI / 2 + s * (1.42 + 0.13 * k + 0.03 * j);
+      const pts = lockPoints(a, {
+        thetaRoot: 1.26 + 0.10 * k + 0.04 * j,
+        thetaHair: 1.48 + 0.08 * k,
+        hemR: 0.116 + 0.022 * k + 0.008 * j,
+        hemY: -0.30 - 0.09 * k - 0.04 * j,
+        bulge: 0.014,
+        tuck: 0.014,
+      });
+      addLock(g, pts, lockW(0.032 + 0.006 * k, 0.013, 0.018), lockT(0.017, 0.010), {
+        segs: 36,
+        radial: 14,
+        outline: 0.0009,
+        round: 0.36,
+      });
     }
-
-    // one extra-long lock falling in front of the shoulder
-    const phi0 = Math.PI / 2 + s * 0.96;
-    const root = headSurface(0.58, phi0, R * 1.195);
-    const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-    const tip = new THREE.Vector3(s * 0.104, -0.78, -0.014);
-    const p1 = root.clone().lerp(tip, 0.22).addScaledVector(dir, 0.026);
-    const p2 = root.clone().lerp(tip, 0.52).addScaledVector(dir, 0.020);
-    const p3 = root.clone().lerp(tip, 0.80).addScaledVector(dir, 0.008);
-    addStrand(
-      g,
-      [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
-      sheetW(0.044, 0.020, 0.026),
-      sheetT(0.018, 0.012),
-      { segs: 34, radial: 14, stops: HAIR_STOPS, outline: 0.0006, round: 0.34 }
-    );
   }
 
   return g;

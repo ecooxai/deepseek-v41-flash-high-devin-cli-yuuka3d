@@ -40,7 +40,7 @@ export function decal(map, { transparent = true, opacity = 1, depthWrite = false
  * The reference is painted with soft, coloured line art rather than inked
  * contours, so every outline is scaled down from the authored thickness.
  */
-const OUTLINE_SCALE = 0.58;
+const OUTLINE_SCALE = 0.92;
 
 export function outlineMaterial(thickness = 0.006, color = PALETTE.outline, opacity = 1) {
   const t = thickness * OUTLINE_SCALE;

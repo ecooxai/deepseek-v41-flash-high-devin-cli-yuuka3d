@@ -62,10 +62,12 @@ export function buildHead() {
   }
 
   /* ----------------------------------------------------------- eyes ---- */
-  const eyeTheta = 1.700;
-  const eyePhiOff = 0.292;
-  const eyeW = 0.645;
-  const eyeH = 0.432;
+  // Anime eyes are enormous: the pair spans nearly the whole face, with only
+  // a narrow bridge between them, and each is wider than it is tall.
+  const eyeTheta = 1.727;
+  const eyePhiOff = 0.480;
+  const eyeW = 0.950;
+  const eyeH = 0.620;
   for (const s of [-1, 1]) {
     const phiC = Math.PI / 2 + s * eyePhiOff;
     const geo = facePatch({
@@ -74,8 +76,8 @@ export function buildHead() {
       dTheta: eyeH,
       dPhi: eyeW,
       offset: 0.0014,
-      uSeg: 32,
-      vSeg: 32,
+      uSeg: 36,
+      vSeg: 36,
     });
     const m = new THREE.Mesh(geo, s < 0 ? A.mat.eyeL : A.mat.eyeR);
     m.name = 'eye' + (s < 0 ? 'L' : 'R');
@@ -88,12 +90,12 @@ export function buildHead() {
   // Thin arched brows peeking out from under the fringe.
   for (const s of [-1, 1]) {
     const geo = facePatch({
-      thetaC: 1.462,
-      phiC: Math.PI / 2 + s * 0.298,
-      dTheta: 0.088,
-      dPhi: 0.330,
+      thetaC: 1.392,
+      phiC: Math.PI / 2 + s * 0.480,
+      dTheta: 0.068,
+      dPhi: 0.470,
       offset: 0.0016,
-      uSeg: 20,
+      uSeg: 22,
       vSeg: 10,
     });
     const m = new THREE.Mesh(geo, s < 0 ? A.mat.browL : A.mat.brow);
@@ -106,13 +108,13 @@ export function buildHead() {
   /* ---------------------------------------------------------- blush ---- */
   for (const s of [-1, 1]) {
     const geo = facePatch({
-      thetaC: 1.945,
-      phiC: Math.PI / 2 + s * 0.470,
-      dTheta: 0.135,
-      dPhi: 0.195,
+      thetaC: 2.050,
+      phiC: Math.PI / 2 + s * 0.640,
+      dTheta: 0.160,
+      dPhi: 0.270,
       offset: 0.001,
-      uSeg: 16,
-      vSeg: 16,
+      uSeg: 18,
+      vSeg: 18,
     });
     const m = new THREE.Mesh(geo, A.mat.blush);
     m.name = 'blush';
@@ -123,7 +125,7 @@ export function buildHead() {
 
   /* ---------------------------------------------------------- mouth ---- */
   const mouth = new THREE.Mesh(
-    facePatch({ thetaC: 2.090, phiC: Math.PI / 2, dTheta: 0.110, dPhi: 0.160, offset: 0.0011, uSeg: 16, vSeg: 12 }),
+    facePatch({ thetaC: 2.135, phiC: Math.PI / 2, dTheta: 0.115, dPhi: 0.175, offset: 0.0011, uSeg: 16, vSeg: 12 }),
     A.mat.mouth
   );
   mouth.name = 'mouth';
@@ -135,7 +137,7 @@ export function buildHead() {
   // Anime noses are a suggestion, not a feature — a barely-there bump.
   const nose = new THREE.Mesh(new THREE.SphereGeometry(R * 0.021, 12, 10), A.mat.skinSoft);
   nose.name = 'nose';
-  headSurface(1.980, Math.PI / 2, R * 1.028, nose.position);
+  headSurface(2.010, Math.PI / 2, R * 1.028, nose.position);
   nose.scale.set(0.9, 0.42, 0.7);
   nose.userData.noOutline = true;
   g.add(nose);
@@ -143,7 +145,7 @@ export function buildHead() {
   /* ------------------------------------------------ soft face shading -- */
   // gentle contact shading where the fringe falls over the brow
   const fringeShadow = new THREE.Mesh(
-    facePatch({ thetaC: 1.46, phiC: Math.PI / 2, dTheta: 0.26, dPhi: 1.7, offset: 0.0009, uSeg: 28, vSeg: 10 }),
+    facePatch({ thetaC: 1.50, phiC: Math.PI / 2, dTheta: 0.26, dPhi: 1.8, offset: 0.0009, uSeg: 28, vSeg: 10 }),
     new THREE.MeshBasicMaterial({
       color: 0x4a3f78,
       transparent: true,

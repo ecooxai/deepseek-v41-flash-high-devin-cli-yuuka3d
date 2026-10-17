@@ -8,7 +8,7 @@ export const VIEWS = {
   threeq: { azimuth: -0.72, elevation: 0.05, distance: 4.2, targetY: 0.99 },
   side: { azimuth: -Math.PI / 2, elevation: 0.04, distance: 4.2, targetY: 0.99 },
   back: { azimuth: Math.PI, elevation: 0.04, distance: 4.2, targetY: 0.99 },
-  face: { azimuth: -0.16, elevation: 0.02, distance: 1.30, targetY: 1.585 },
+  face: { azimuth: -0.16, elevation: 0.02, distance: 0.92, targetY: 1.600 },
 };
 
 export function initUI(viewer) {

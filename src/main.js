@@ -121,6 +121,12 @@ function applyDebugFlags(character) {
     });
   }
 
+  // ?hud=0 -> hide the overlay, so a silhouette render contains only the model
+  if (q.get('hud') === '0') {
+    const hud = document.querySelector('.hud');
+    if (hud) hud.style.display = 'none';
+  }
+
   // ?bg=magenta -> solid chroma-key backdrop with everything except the
   // character hidden, so the silhouette can be measured exactly.
   if (q.get('bg') === 'magenta') {

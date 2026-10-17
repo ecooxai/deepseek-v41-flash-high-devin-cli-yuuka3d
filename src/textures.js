@@ -211,20 +211,16 @@ export function pajamaTexture(repeat = [3, 3]) {
 
   // motifs (seamless)
   const spots = [
-    [86, 92, 1.0, 'cat'],
-    [300, 60, 0.78, 'heart'],
-    [430, 168, 1.05, 'cat'],
-    [186, 236, 0.72, 'heart'],
-    [72, 330, 0.9, 'cat'],
-    [286, 300, 1.0, 'heart'],
-    [430, 402, 0.8, 'cat'],
-    [176, 452, 0.95, 'heart'],
-    [352, 470, 0.7, 'cat'],
-    [18, 200, 0.62, 'heart'],
-    [250, 168, 0.5, 'dot'],
-    [396, 300, 0.45, 'dot'],
-    [128, 158, 0.4, 'dot'],
-    [232, 396, 0.5, 'dot'],
+    [96, 116, 1.0, 'cat'],
+    [352, 74, 0.72, 'heart'],
+    [372, 268, 1.0, 'cat'],
+    [176, 300, 0.60, 'heart'],
+    [100, 430, 0.86, 'cat'],
+    [300, 456, 0.68, 'heart'],
+    [470, 470, 0.62, 'cat'],
+    [20, 250, 0.52, 'heart'],
+    [268, 190, 0.44, 'dot'],
+    [452, 150, 0.40, 'dot'],
   ];
 
   seamless(ctx, S, S, (g) => {
@@ -256,8 +252,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
 
   const cx = W * 0.5;
   const cy = H * 0.52;
-  const rx = W * 0.40;
-  const ry = H * 0.40;
+  const rx = W * 0.455;
+  const ry = H * 0.445;
 
   // --- eye socket / sclera -------------------------------------------
   // Upper lid is a fairly flat arch (relaxed, slightly sleepy look).
@@ -298,8 +294,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // --- iris ------------------------------------------------------------
   const ix = cx;
   const iy = cy - ry * 0.02;
-  const irx = rx * 0.68;
-  const iry = ry * 0.88;
+  const irx = rx * 0.60;
+  const iry = ry * 0.82;
 
   ctx.save();
   ctx.beginPath();
@@ -307,16 +303,16 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   ctx.clip();
 
   const ig = ctx.createLinearGradient(0, iy - iry, 0, iy + iry);
-  ig.addColorStop(0.0, '#2a2362');
-  ig.addColorStop(0.28, '#463d9c');
-  ig.addColorStop(0.60, '#7367dc');
-  ig.addColorStop(1.0, '#cbc4fb');
+  ig.addColorStop(0.0, '#574ab4');
+  ig.addColorStop(0.34, '#7869e0');
+  ig.addColorStop(0.66, '#a79df5');
+  ig.addColorStop(1.0, '#e8e5ff');
   ctx.fillStyle = ig;
   ctx.fillRect(ix - irx, iy - iry, irx * 2, iry * 2);
 
   // radial spokes for that hand-drawn iris feel
-  ctx.globalAlpha = 0.22;
-  ctx.strokeStyle = '#1c1740';
+  ctx.globalAlpha = 0.13;
+  ctx.strokeStyle = '#2a2358';
   for (let i = 0; i < 26; i++) {
     const a = (i / 26) * Math.PI * 2;
     ctx.lineWidth = 1.6 + (i % 3);
@@ -363,7 +359,7 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
 
   // soft inner shadow under the lid
   const sh = ctx.createLinearGradient(0, cy - ry, 0, cy - ry * 0.15);
-  sh.addColorStop(0, 'rgba(58,47,99,0.40)');
+  sh.addColorStop(0, 'rgba(58,47,99,0.26)');
   sh.addColorStop(1, 'rgba(58,47,99,0)');
   ctx.fillStyle = sh;
   ctx.fillRect(0, 0, W, H);
@@ -371,8 +367,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // soften both corners so the sclera never reads as a hard white wedge
   for (const sx of [-1, 1]) {
     const cg = ctx.createRadialGradient(cx + sx * rx * 0.92, cy + ry * 0.10, 0, cx + sx * rx * 0.92, cy + ry * 0.10, rx * 0.55);
-    cg.addColorStop(0, 'rgba(96,80,140,0.55)');
-    cg.addColorStop(0.6, 'rgba(120,105,165,0.24)');
+    cg.addColorStop(0, 'rgba(110,96,155,0.38)');
+    cg.addColorStop(0.6, 'rgba(130,116,175,0.15)');
     cg.addColorStop(1, 'rgba(120,105,165,0)');
     ctx.fillStyle = cg;
     ctx.fillRect(0, 0, W, H);

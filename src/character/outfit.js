@@ -6,13 +6,13 @@
 import * as THREE from 'three';
 import { assets } from '../assets.js';
 import { addOutline } from '../materials.js';
-import { surfaceShell, bilinearPatch, tubeAlongCurve, curveFromPoints, lerp, smoothstep, TAU } from '../geometry.js';
-import { onTorso, frontDist } from './profile.js';
+import { surfaceShell, bilinearPatch, tubeAlongCurve, curveFromPoints, hairStrand, lerp, smoothstep, TAU } from '../geometry.js';
+import { onTorso, frontDist, torsoRadius } from './profile.js';
 import { POSE, ARM_RADIUS } from './limbs.js';
 
 const SHIRT_TOP = 1.402;
-const SHIRT_BOTTOM = 0.962;
-const V_START = 1.252;
+const SHIRT_BOTTOM = 1.005;
+const V_START = 1.268;
 
 /** Gentle cloth ripple so the pyjamas read as soft fabric, not plastic. */
 function folds(a, y, amp = 0.0035) {
@@ -22,11 +22,18 @@ function folds(a, y, amp = 0.0035) {
   );
 }
 
+/**
+ * The shirt's own outward offset at a given height. Every detail drawn on the
+ * shirt — collar, placket, pocket, buttons — has to sit *proud of this*, or it
+ * is swallowed by the garment shell.
+ */
+const shirtGrow = (y) => 0.0760 - 0.0450 * smoothstep(SHIRT_BOTTOM, SHIRT_TOP, y);
+
 /** half-angle of the V-neck opening at a given height */
 function vHalfAngle(y) {
   if (y <= V_START) return 0;
   const t = Math.min(1, (y - V_START) / (SHIRT_TOP - V_START));
-  return 0.042 + 0.155 * Math.pow(t, 0.90);
+  return 0.050 + 0.195 * Math.pow(t, 0.85);
 }
 
 export function buildOutfit() {
@@ -58,7 +65,9 @@ export function buildOutfit() {
     point: (u, v, out) => {
       const a = u * TAU;
       const y = lerp(SHIRT_BOTTOM, SHIRT_TOP, v);
-      const grow = 0.0580 - 0.0260 * smoothstep(0.0, 1.0, v);
+      // A-line: the shirt flares out over the shorts and stops at the
+      // waist, so its hem casts a shadow across the top of the bloomers.
+      const grow = shirtGrow(y);
       onTorso(a, y, grow + folds(a, y, 0.0034), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -74,13 +83,41 @@ export function buildOutfit() {
   addOutline(shirt, { thickness: 0.0034 });
   g.add(shirt);
 
+  // The shirt is a tube, so its top edge would leave a ring of daylight
+  // between the collar and the neck. A sloped yoke closes it and gives the
+  // garment actual shoulders.
+  {
+    const [rx, rz] = torsoRadius(SHIRT_TOP);
+    const ease = shirtGrow(SHIRT_TOP);
+    const geo = surfaceShell({
+      uSeg: 96,
+      vSeg: 12,
+      flip: true,
+      point: (u, v, out) => {
+        const a = u * TAU;
+        const k = 1 - Math.pow(1 - v, 2.0);
+        out.set(
+          lerp(rx + ease, 0.036, k) * Math.cos(a),
+          lerp(SHIRT_TOP - 0.004, 1.452, k),
+          lerp(rz + ease, 0.034, k) * Math.sin(a)
+        );
+      },
+      uv: (u, v) => [u * 3, v],
+    });
+    const yoke = new THREE.Mesh(geo, A.mat.pajama);
+    yoke.name = 'shirtYoke';
+    yoke.castShadow = true;
+    yoke.userData.noOutline = true;
+    g.add(yoke);
+  }
+
   /* --------------------------------------------------------- collar ----- */
   // Notched lapels: a strip that follows the V edge, the way a real pyjama
   // collar folds back, rather than a slab of white across the chest.
   for (const sgn of [1, -1]) {
-    for (const [grow, mat, name, pad] of [
-      [0.0300, A.mat.trimShade, 'collarRim', 0.0],
-      [0.0328, A.mat.trim, 'collar', 0.014],
+    for (const [extra, mat, name, pad] of [
+      [0.0025, A.mat.trimShade, 'collarRim', 0.0],
+      [0.0050, A.mat.trim, 'collar', 0.014],
     ]) {
       const geo = surfaceShell({
         uSeg: 10,
@@ -88,11 +125,11 @@ export function buildOutfit() {
         closed: false,
         flip: sgn > 0,
         point: (u, v, out) => {
-          const y = lerp(1.412, 1.126, v);
+          const y = lerp(1.412, 1.268, v);
           const inner = vHalfAngle(y) + 0.012 + pad;
-          const outer = inner + 0.255 + 0.130 * (1 - v) - pad;
+          const outer = inner + 0.150 + 0.075 * (1 - v) - pad;
           const a = Math.PI / 2 + sgn * lerp(inner, outer, u);
-          onTorso(a, y, grow + 0.006 * Math.sin(Math.PI * u), out);
+          onTorso(a, y, shirtGrow(y) + extra + 0.006 * Math.sin(Math.PI * u), out);
         },
         uv: (u, v) => [u, v * 3],
       });
@@ -111,9 +148,9 @@ export function buildOutfit() {
       vSeg: 6,
       closed: false,
       point: (u, v, out) => {
-        const a = Math.PI / 2 + 0.44 + u * (TAU - 0.88);
-        const y = lerp(1.318, 1.388, v);
-        onTorso(a, y, 0.0255 - 0.004 * v, out);
+        const a = Math.PI / 2 + 0.28 + u * (TAU - 0.56);
+        const y = lerp(1.334, 1.396, v);
+        onTorso(a, y, shirtGrow(y) + 0.0050, out);
       },
       uv: (u, v) => [u * 3, v],
     });
@@ -129,9 +166,9 @@ export function buildOutfit() {
     vSeg: 26,
     closed: false,
     point: (u, v, out) => {
-      const a = Math.PI / 2 + (u - 0.5) * 0.115;
-      const y = lerp(0.992, 1.238, v);
-      onTorso(a, y, 0.0325, out);
+      const a = Math.PI / 2 + (u - 0.5) * 0.052;
+      const y = lerp(1.028, 1.212, v);
+      onTorso(a, y, shirtGrow(y) + 0.0040, out);
     },
     uv: (u, v) => [u, v * 3],
   });
@@ -141,10 +178,10 @@ export function buildOutfit() {
   g.add(placket);
 
   for (let i = 0; i < 3; i++) {
-    const y = 1.183 - i * 0.068;
+    const y = 1.170 - i * 0.062;
     const btn = new THREE.Mesh(new THREE.SphereGeometry(0.0088, 14, 12), A.mat.button);
     btn.name = 'button';
-    onTorso(Math.PI / 2, y, 0.0470, btn.position);
+    onTorso(Math.PI / 2, y, shirtGrow(y) + 0.0105, btn.position);
     btn.scale.set(1, 1, 0.55);
     btn.lookAt(btn.position.clone().multiplyScalar(2).setY(btn.position.y));
     btn.userData.noOutline = true;
@@ -153,10 +190,10 @@ export function buildOutfit() {
 
   /* ---------------------------------------------------------- pocket ---- */
   const pocketRim = bilinearPatch(
-    onTorso(Math.PI / 2 - 0.66, 1.246, 0.036),
-    onTorso(Math.PI / 2 - 0.30, 1.242, 0.036),
-    onTorso(Math.PI / 2 - 0.30, 1.130, 0.036),
-    onTorso(Math.PI / 2 - 0.66, 1.134, 0.036),
+    onTorso(Math.PI / 2 - 0.66, 1.246, shirtGrow(1.246) + 0.004),
+    onTorso(Math.PI / 2 - 0.30, 1.242, shirtGrow(1.242) + 0.004),
+    onTorso(Math.PI / 2 - 0.30, 1.130, shirtGrow(1.130) + 0.004),
+    onTorso(Math.PI / 2 - 0.66, 1.134, shirtGrow(1.134) + 0.004),
     { uSeg: 12, vSeg: 12, bulge: 0.004, normal: new THREE.Vector3(-0.45, 0, 1) }
   );
   const pocketRimMesh = new THREE.Mesh(pocketRim, A.mat.trimShade);
@@ -165,10 +202,10 @@ export function buildOutfit() {
   g.add(pocketRimMesh);
 
   const pocket = bilinearPatch(
-    onTorso(Math.PI / 2 - 0.645, 1.239, 0.0375),
-    onTorso(Math.PI / 2 - 0.315, 1.235, 0.0375),
-    onTorso(Math.PI / 2 - 0.315, 1.141, 0.0375),
-    onTorso(Math.PI / 2 - 0.645, 1.145, 0.0375),
+    onTorso(Math.PI / 2 - 0.645, 1.239, shirtGrow(1.239) + 0.0055),
+    onTorso(Math.PI / 2 - 0.315, 1.235, shirtGrow(1.235) + 0.0055),
+    onTorso(Math.PI / 2 - 0.315, 1.141, shirtGrow(1.141) + 0.0055),
+    onTorso(Math.PI / 2 - 0.645, 1.145, shirtGrow(1.145) + 0.0055),
     { uSeg: 12, vSeg: 12, bulge: 0.005, normal: new THREE.Vector3(-0.45, 0, 1) }
   );
   const pocketMesh = new THREE.Mesh(pocket, A.mat.trim);
@@ -177,13 +214,18 @@ export function buildOutfit() {
   g.add(pocketMesh);
 
   /* --------------------------------------------------------- shorts ----- */
+  // Bloomers, not a nightgown skirt: the shorts have to be *wider* than the
+  // shirt hem all the way down, or the two garments merge into one silhouette.
+  // The puff grows toward the hem and a ruffle flounce flares past it.
   const shortsGeo = surfaceShell({
     uSeg: 104,
     vSeg: 40,
     point: (u, v, out) => {
       const a = u * TAU;
-      const y = lerp(0.690, 1.030, v);
-      const grow = 0.0420 + 0.012 * smoothstep(1.0, 0.0, v);
+      const y = lerp(0.718, 1.040, v);
+      // widest just above the hem, then a slight tuck: bloomers balloon in
+      // the middle and gather in again at the ruffle
+      const grow = 0.028 + 0.062 * Math.pow(1 - v, 0.50);
       onTorso(a, y, grow + folds(a, y, 0.0030), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -194,14 +236,34 @@ export function buildOutfit() {
   addOutline(shorts, { thickness: 0.0042 });
   g.add(shorts);
 
+  // The top of the bloomers sits in the shirt's shadow — without this the two
+  // garments are the same fabric and read as one long nightdress.
+  {
+    const geo = surfaceShell({
+      uSeg: 104,
+      vSeg: 10,
+      point: (u, v, out) => {
+        const a = u * TAU;
+        const y = lerp(1.006, 0.936, v);
+        const gv = (y - 0.718) / 0.322;
+        onTorso(a, y, 0.028 + 0.062 * Math.pow(1 - gv, 0.50) + 0.0042 + folds(a, y, 0.0030), out);
+      },
+      uv: (u, v) => [u * 2.2, v],
+    });
+    const mesh = new THREE.Mesh(geo, A.mat.pajamaDeep);
+    mesh.name = 'shortsShadow';
+    mesh.userData.noOutline = true;
+    g.add(mesh);
+  }
+
   // waistband
   const bandGeo = surfaceShell({
     uSeg: 104,
     vSeg: 6,
     point: (u, v, out) => {
       const a = u * TAU;
-      const y = lerp(0.975, 1.015, v);
-      onTorso(a, y, 0.026 - 0.004 * v, out);
+      const y = lerp(0.988, 1.028, v);
+      onTorso(a, y, 0.030 - 0.004 * v, out);
     },
     uv: (u, v) => [u * 3, v],
   });
@@ -210,29 +272,63 @@ export function buildOutfit() {
   band.userData.noOutline = true;
   g.add(band);
 
-  // short legs with scalloped hems
-  for (const s of [-1, 1]) {
-    const cx = s * 0.070;
+  // The flounce: a separate ring that flares out below the shorts and ends in
+  // a row of round scallops — the reference's bloomers have a gathered ruffle,
+  // not a straight cut hem.
+  {
+    const NS = 9;
     const geo = surfaceShell({
-      uSeg: 64,
-      vSeg: 26,
-      flip: true, // v runs downward here, so the winding must be inverted
+      uSeg: 132,
+      vSeg: 22,
+      flip: true, // v runs downward
       point: (u, v, out) => {
         const a = u * TAU;
-        const scallop = 0.036 * Math.abs(Math.sin(4.5 * a));
-        const hemY = 0.700 - scallop;
-        const y = lerp(0.870, hemY, v);
-        const r = lerp(0.108, 0.105, v);
-        const rr = r * (1 + 0.16 * smoothstep(0.50, 1.0, v));
-        out.set(cx + rr * Math.cos(a), y, rr * Math.sin(a) * 0.94 + 0.004);
+        const scallop = 0.019 * Math.pow(Math.abs(Math.sin((a * NS) / 2)), 0.7);
+        const y = lerp(0.800, 0.726 - scallop, v);
+        const grow = 0.090 + 0.008 * Math.pow(v, 0.65) + folds(a, y, 0.0022);
+        onTorso(a, y, grow, out);
       },
-      uv: (u, v) => [u * 1.6, v * 1.6],
+      uv: (u, v) => [u * 2.2, v * 1.4],
     });
     const mesh = new THREE.Mesh(geo, A.mat.pajama);
-    mesh.name = 'shortsLeg';
+    mesh.name = 'shortsRuffle';
     mesh.castShadow = true;
-    addOutline(mesh, { thickness: 0.004 });
+    addOutline(mesh, { thickness: 0.0036 });
     g.add(mesh);
+  }
+
+  // the drawstring bow on the left hip
+  {
+    const bow = new THREE.Group();
+    bow.name = 'hipBow';
+    const P = onTorso(Math.PI / 2 + 1.02, 1.000, 0.058);
+    bow.position.copy(P);
+    bow.rotation.set(0.10, -0.72, 0.55);
+    for (const s of [-1, 1]) {
+      const loop = new THREE.Mesh(new THREE.SphereGeometry(0.0135, 14, 12), A.mat.trim);
+      loop.name = 'hipBowLoop';
+      loop.position.set(s * 0.014, 0.004, 0.001);
+      loop.scale.set(1.0, 0.66, 0.60);
+      loop.rotation.z = s * 0.32;
+      bow.add(loop);
+    }
+    for (const s of [-1, 1]) {
+      const tail = new THREE.Mesh(
+        hairStrand(
+          curveFromPoints([[0, -0.002, 0], [s * 0.011, -0.030, -0.003], [s * 0.019, -0.058, -0.006]], 0.5),
+          (t) => 0.0075 - 0.0035 * t,
+          (t) => 0.0032 - 0.0014 * t,
+          { segs: 12, radial: 8 }
+        ),
+        A.mat.trim
+      );
+      tail.name = 'hipBowTail';
+      bow.add(tail);
+    }
+    bow.traverse((o) => {
+      if (o.isMesh) o.userData.noOutline = true;
+    });
+    g.add(bow);
   }
 
   /* --------------------------------------------------------- sleeves ---- */
