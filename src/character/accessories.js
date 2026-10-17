@@ -26,8 +26,8 @@ export function buildHalo() {
 
   // A thin, wide band seen almost edge-on — the reference halo is a flat
   // hoop, not a fat donut, so the tube stays small against a large radius.
-  const MAJOR = 0.185;
-  const TUBE = 0.0046;
+  const MAJOR = 0.186;
+  const TUBE = 0.0062;
 
   const ring = new THREE.Mesh(new THREE.TorusGeometry(MAJOR, TUBE, 12, 132), A.mat.halo);
   ring.name = 'haloRing';
@@ -63,12 +63,17 @@ export function buildHeadband() {
       const phi = u * TAU;
       const front = Math.max(0, Math.sin(phi));
       const away = 1 - front;
-      const thetaTop = 0.235 + 0.100 * front + 0.022 * Math.sin(phi * 7);
-      const thetaBot = 1.440 + 0.100 * Math.max(0, -Math.sin(phi)) + 0.032 * Math.sin(phi * 5 + 1.1);
+      // A folded cloth tied over the crown: its front edge sits at the
+      // hairline so the bangs hang out from under it, and it drops to ear
+      // level at the sides.
+      const thetaTop = 0.140 + 0.060 * front + 0.020 * Math.sin(phi * 7);
+      const thetaBot =
+        0.840 + 0.520 * Math.abs(Math.cos(phi)) + 0.320 * Math.max(0, -Math.sin(phi)) +
+        0.030 * Math.sin(phi * 5 + 1.1);
       const theta = lerp(thetaTop, thetaBot, v);
       // sits *inside* the fringe at the brow (so the bangs hide it) and
       // swells past the hair as it swings round to the sides and back
-      const rad = R * (1.030 + 0.215 * Math.pow(away, 2.5) + 0.020 * Math.sin(Math.PI * v) + 0.008 * Math.sin(phi * 9));
+      const rad = R * (1.196 + 0.024 * Math.sin(Math.PI * v) + 0.010 * Math.sin(phi * 9));
       headSurface(theta, phi, rad, out);
       return out;
     },
@@ -96,11 +101,11 @@ export function buildHeadband() {
 
   for (const s of [-1, 1]) {
     const loop = new THREE.Mesh(
-      ribbonLoop(s, { cx: 0.041, cy: 0.026, rx: 0.028, ry: 0.040, w: 0.0195, thick: 0.0082 }),
+      ribbonLoop(s, { cx: 0.050, cy: 0.026, rx: 0.030, ry: 0.044, w: 0.0225, thick: 0.0058 }),
       bandMat
     );
     loop.name = 'bowLoop';
-    loop.rotation.z = s * 0.30;
+    loop.rotation.z = s * 0.46;
     loop.castShadow = true;
     loop.userData.noOutline = true;
     bow.add(loop);
@@ -235,12 +240,12 @@ export function buildPillow() {
   const A = assets();
   const g = new THREE.Group();
   g.name = 'pillow';
-  g.position.set(0.236, 0.548, 0.052);
-  g.rotation.set(-0.05, 0.24, -0.60);
+  g.position.set(0.196, 0.622, 0.050);
+  g.rotation.set(-0.05, 0.22, -0.52);
 
-  const W = 0.315;
-  const H = 0.462;
-  const D = 0.212;
+  const W = 0.246;
+  const H = 0.372;
+  const D = 0.176;
 
   const mesh = new THREE.Mesh(pillowGeometry(W, H, D), A.mat.pillow);
   mesh.name = 'pillowMesh';

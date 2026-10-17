@@ -89,6 +89,16 @@ tools/
 * **One curtain, then detail strands.** The back of the hair is a single
   continuous `surfaceShell` curtain; layering dozens of equal strands instead
   makes the hem read as a grass skirt rather than drawn hair.
+* **Winding depends on how `point` is written, not on the part.** `surfaceShell`
+  winds outward for a `headSurface`-driven shell with `v` running *down* the
+  head, but a hand-written `out.set(...)` formula with the same `v` direction
+  comes out the other way. The back curtain needs `flip: true`; the fringe
+  needs `flip: false`. Get it wrong and the mesh is silently back-face culled —
+  the fringe was invisible for several iterations and the "fringe" on screen
+  was really the scalp shell's scalloped edge.
+* **`paintAlongV` reads `uv.y`.** Any shell whose `uv` scales `v` (e.g.
+  `[u * 4, v * 2]`) clamps to the last colour stop past `v = 0.5`, so half the
+  surface ends up one flat tone.
 * **Hair lengths are metres from the head centre.** `headSurface` returns
   R-scaled vectors while the tip literals are plain metres, so the two live in
   the same space — but a tip of `-1.25` hangs to the shin, not the hip. The
@@ -127,18 +137,18 @@ gh api -X POST repos/<owner>/<repo>/pages \
 
 ## Status
 
-Iteration 81 / 1000 · self-assessed **94 / 100**.
+Iteration 82 / 1000 · self-assessed **94 / 100**.
 
 Known weak spots (in priority order):
 
-1. The back hair is still broad ribbons rather than finely separated strands,
-   and the hem is a row of soft points instead of drawn locks.
+1. The hair is still broad flat ribbons rather than finely separated strands;
+   the side locks read as flat panels from the front.
 2. Hands read as a mitten at close range; the fingers are four swept tubes.
 3. Cloth is a smooth shell — no real folds or drape beyond the `folds()` ripple.
 4. The pillow is a superellipsoid cushion; it has no gathered corners.
 5. The side profile is nearly all hair; only a sliver of the face reads.
 6. Legs are near-cylindrical — the knee and calf bumps are barely modelled.
-7. The bow's loops merge into a white blob at close range.
+7. The bow's loops merge into a blob at some angles.
 
 Measurement helpers that proved useful when tuning proportions: render with
 `?bg=magenta` (chroma-key backdrop, floor hidden) and compare the silhouette

@@ -297,8 +297,8 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   // --- iris ------------------------------------------------------------
   const ix = cx;
   const iy = cy - ry * 0.02;
-  const irx = rx * 0.74;
-  const iry = ry * 0.90;
+  const irx = rx * 0.68;
+  const iry = ry * 0.88;
 
   ctx.save();
   ctx.beginPath();
@@ -306,10 +306,10 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   ctx.clip();
 
   const ig = ctx.createLinearGradient(0, iy - iry, 0, iy + iry);
-  ig.addColorStop(0.0, '#241c4e');
-  ig.addColorStop(0.30, '#4a3f96');
+  ig.addColorStop(0.0, '#3a3272');
+  ig.addColorStop(0.30, '#5c53ae');
   ig.addColorStop(0.62, hex(PALETTE.eyeIris));
-  ig.addColorStop(1.0, '#b3a8ee');
+  ig.addColorStop(1.0, '#c3baf5');
   ctx.fillStyle = ig;
   ctx.fillRect(ix - irx, iy - iry, irx * 2, iry * 2);
 
@@ -333,9 +333,9 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
   ctx.fill();
 
   // bottom bounce light
-  const bg = ctx.createLinearGradient(0, iy + iry * 0.25, 0, iy + iry);
-  bg.addColorStop(0, 'rgba(196,186,255,0)');
-  bg.addColorStop(1, 'rgba(206,197,255,0.85)');
+  const bg = ctx.createLinearGradient(0, iy + iry * 0.10, 0, iy + iry);
+  bg.addColorStop(0, 'rgba(206,197,255,0)');
+  bg.addColorStop(1, 'rgba(224,218,255,0.95)');
   ctx.fillStyle = bg;
   ctx.fillRect(ix - irx, iy, irx * 2, iry);
 
@@ -388,10 +388,10 @@ export function eyeTexture(size = 512, { lashSide = 1 } = {}) {
     const p = lid(i / N);
     i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
   }
-  ctx.lineWidth = W * 0.044;
+  ctx.lineWidth = W * 0.036;
   ctx.stroke();
   // crisp inner edge
-  ctx.lineWidth = W * 0.020;
+  ctx.lineWidth = W * 0.016;
   ctx.strokeStyle = '#2b2354';
   ctx.stroke();
   ctx.restore();

@@ -18,23 +18,23 @@ import { headSurface, hairStrand, curveFromPoints, surfaceShell, paintAlongV, le
 const R = DIMS.headR;
 
 const HAIR_STOPS = [
-  [0.0, 0x564a92],
-  [0.3, 0x6d5fb4],
-  [0.62, 0x8777d2],
-  [0.86, 0xa192e8],
-  [1.0, 0xb8acf4],
+  [0.0, 0x514f96],
+  [0.3, 0x6462ac],
+  [0.62, 0x7876c2],
+  [0.86, 0x908edb],
+  [1.0, 0xa5a3ea],
 ];
 const HAIR_STOPS_DEEP = [
-  [0.0, 0x40366e],
-  [0.4, 0x554990],
-  [0.75, 0x6d5eb4],
-  [1.0, 0x8a79cf],
+  [0.0, 0x403f7a],
+  [0.4, 0x514f92],
+  [0.75, 0x6563ab],
+  [1.0, 0x7d7bc5],
 ];
 const HAIR_STOPS_SHEET = [
-  [0.0, 0x504490],
-  [0.35, 0x685ab0],
-  [0.7, 0x8272cc],
-  [1.0, 0xa495e8],
+  [0.0, 0x4b4a8c],
+  [0.35, 0x5d5ca4],
+  [0.7, 0x7271bb],
+  [1.0, 0x8d8cd5],
 ];
 
 function mulberry32(a) {
@@ -99,11 +99,11 @@ export function buildHair() {
     uv: (u, v) => [u * 5, v * 3],
   });
   paintAlongV(capGeo, [
-    [0.0, 0x5b4e99],
-    [0.16, 0x7c6dc8],
-    [0.30, 0xac9fee],
-    [0.48, 0x7869bd],
-    [1.0, 0x564a94],
+    [0.0, 0x56549b],
+    [0.16, 0x6e6cb6],
+    [0.30, 0x9a98e2],
+    [0.48, 0x6a68b3],
+    [1.0, 0x504e92],
   ]);
   const cap = new THREE.Mesh(capGeo, assets().mat.hair);
   cap.name = 'hairCap';
@@ -179,7 +179,7 @@ export function buildHair() {
       g,
       [V(root.x, root.y, root.z), V(p1.x, p1.y, p1.z), V(p2.x, p2.y, p2.z), V(p3.x, p3.y, p3.z), V(tip.x, tip.y, tip.z)],
       sheetW(0.076 + 0.018 * as, 0.024, 0.036),
-      sheetT(0.019, 0.012),
+      sheetT(0.027, 0.016),
       { segs: 42, radial: 14, stops: i % 2 === 0 ? HAIR_STOPS : HAIR_STOPS_DEEP, outline: 0.0026 }
     );
   }
@@ -242,9 +242,9 @@ export function buildHair() {
       uv: (u, v) => [u * 6, v],
     });
     paintAlongV(sheenGeo, [
-      [0.0, 0x413672],
-      [0.5, 0x6055a4],
-      [1.0, 0x3b3168],
+      [0.0, 0x4a4890],
+      [0.5, 0x6f6dbe],
+      [1.0, 0x45438a],
     ], { invert: true });
     const sheen = new THREE.Mesh(sheenGeo, assets().mat.hair);
     sheen.name = 'hairSheen';
@@ -261,20 +261,21 @@ export function buildHair() {
       uSeg: 110,
       vSeg: 24,
       closed: false,
-      flip: true,
+      flip: false,
       point: (u, v, out) => {
         const su = u * 2 - 1;
-        const phi = Math.PI / 2 + su * 1.34;
+        const phi = Math.PI / 2 + su * 1.15;
         const front = Math.sin(phi);
         const r = R * (capSwell(front) + 0.028);
         const thetaTop = 0.26 + 0.30 * Math.pow(Math.abs(su), 1.1);
         const root = headSurface(thetaTop, phi, r);
         // a side-swept bang: the parting sits right of centre, so the locks
         // are longer on the left and the edge is a soft diagonal
-        // a side-swept bang: two or three long soft points, deeper on the
-        // right where the parting falls
+        // A side-swept bang: the parting sits at the top right, so the locks
+        // get steadily longer toward the left and never peak in the middle
+        // (a mid-fringe peak reads as a "V" cut out of the forehead).
         const tipTheta =
-          1.420 + 0.070 * su + 0.095 * Math.sin(su * 2.8 - 0.30) + 0.050 * su * su;
+          1.442 - 0.104 * su + 0.046 * Math.sin(su * 2.6 + 0.50) + 0.028 * Math.sin(su * 7.2 + 1.1);
         const tip = headSurface(tipTheta, phi, r + R * 0.012);
         const dir = new THREE.Vector3(-Math.cos(phi), 0, Math.sin(phi));
         out.lerpVectors(root, tip, v);
@@ -283,10 +284,10 @@ export function buildHair() {
       uv: (u, v) => [u * 4, v * 2],
     });
     paintAlongV(fringeGeo, [
-      [0.0, 0x352c5e],
-      [0.35, 0x4c4084],
-      [0.72, 0x6557a8],
-      [1.0, 0x7b6cc2],
+      [0.0, 0x56549c],
+      [0.35, 0x6d6bba],
+      [0.72, 0x8886d6],
+      [1.0, 0xa3a1ec],
     ]);
     const fringe = new THREE.Mesh(fringeGeo, assets().mat.hair);
     fringe.name = 'hairFringe';
@@ -298,13 +299,13 @@ export function buildHair() {
 
   /* ========================================================= SIDE LOCKS = */
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 3; k++) {
-      const phi0 = Math.PI / 2 + s * (1.34 + k * 0.16 + 0.02 * rnd());
-      const theta0 = 0.70 + k * 0.17 + 0.04 * rnd();
+    for (let k = 0; k < 4; k++) {
+      const phi0 = Math.PI / 2 + s * (1.30 + k * 0.13 + 0.03 * rnd());
+      const theta0 = 0.72 + k * 0.14 + 0.05 * rnd();
       const root = headSurface(theta0, phi0, R * 1.055);
       const dir = new THREE.Vector3(-Math.cos(phi0), 0, Math.sin(phi0));
-      const tipY = -0.34 - 0.11 * k - 0.03 * rnd();
-      const tipX = s * (0.092 + 0.040 * k + 0.010 * rnd());
+      const tipY = -0.30 - 0.085 * k - 0.035 * rnd();
+      const tipX = s * (0.088 + 0.030 * k + 0.012 * rnd());
       const tipZ = 0.004 - 0.030 * k;
       const tip = new THREE.Vector3(tipX, tipY, tipZ);
       const p1 = root.clone().lerp(tip, 0.30).addScaledVector(dir, 0.020);

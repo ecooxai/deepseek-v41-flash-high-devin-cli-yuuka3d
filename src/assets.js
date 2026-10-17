@@ -19,7 +19,7 @@ export function assets() {
     gradSkin: TX.toonGradient(9, 0.34, 0.70),
     gradCloth: TX.toonGradient(9, 0.30, 0.62),
     gradPillow: TX.toonGradient(48, 1.7, 0.52),
-    gradHair: TX.toonGradient(8, 0.42, 0.60),
+    gradHair: TX.toonGradient(10, 0.48, 0.70),
     pajama: TX.pajamaTexture([0.48, 0.48]),
     pajamaFine: TX.pajamaTexture([5, 5]),
     eyeL: TX.eyeTexture(512, { lashSide: -1 }),
