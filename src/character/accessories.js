@@ -51,6 +51,40 @@ export function buildHalo() {
 
 /* ---------------------------------------------------------- headband --- */
 
+/**
+ * One bow loop: a flat ribbon petal that leaves the knot as a point, swells,
+ * and comes back to a point at the outer tip, sweeping up and out as it goes.
+ *
+ * Solid ellipsoids here read as a pair of rabbit ears — the pinch at both ends
+ * is what makes the shape read as folded ribbon rather than as two eggs.
+ */
+function bowPetal(side, { len = 0.128, wMax = 0.066, thick = 0.024, rise = 0.80, fall = 0.34 } = {}) {
+  return surfaceShell({
+    uSeg: 34,
+    vSeg: 26,
+    flip: true,
+    point: (u, v, out) => {
+      const a = u * TAU;
+      const t = v;
+      const ang = rise + (fall - rise) * t;
+      const dx = Math.cos(ang);
+      const dy = Math.sin(ang);
+      const k = Math.sin(Math.PI * Math.pow(t, 0.58));
+      const r = len * t;
+      const w = wMax * k;
+      const th = thick * (0.16 + 0.84 * k);
+      out.set(
+        side * (dx * r - dy * Math.cos(a) * w),
+        dy * r + dx * Math.cos(a) * w,
+        Math.sin(a) * th
+      );
+      return out;
+    },
+    uv: (u, v) => [u, v],
+  });
+}
+
+
 export function buildHeadband() {
   const A = assets();
   const g = new THREE.Group();
@@ -70,11 +104,11 @@ export function buildHeadband() {
       // A kerchief knotted at the crown: a thin band across the brow (tucked
       // just inside the fringe) that opens out into a wide hood behind and
       // beside the head, where it reads as the white cloth of the reference.
-      const thetaTop = 0.150 + 0.400 * open;
-      const thetaBot = 0.660 + 0.900 * open;
+      const thetaTop = 0.170;
+      const thetaBot = 0.380 + 1.200 * open;
       const theta = lerp(thetaTop, thetaBot, v);
       const side = Math.abs(Math.cos(phi));
-      const rad = R * (1.196 + 0.280 * side + 0.020 * back + 0.016 * Math.sin(Math.PI * v));
+      const rad = R * (1.198 + 0.300 * side + 0.030 * back + 0.016 * Math.sin(Math.PI * v));
       headSurface(theta, phi, rad, out);
       return out;
     },
@@ -99,34 +133,32 @@ export function buildHeadband() {
   bow.name = 'bow';
   // The bow is tied on top of the crown, standing proud of the hair, and
   // leans forward over the fringe the way a tied ribbon does.
-  bow.position.set(-0.014, R * 1.42, 0.078);
+  bow.position.set(-0.014, R * 1.40, 0.090);
   bow.rotation.set(-0.20, 0.05, 0.09);
 
   // Each loop is a solid ribbon blade sweeping up and out from the knot,
   // tapering to a point — the way a tied bow is actually drawn. Sweeping a
   // flat ribbon around a closed path instead leaves a hole and reads as a
   // pair of doughnuts.
-  // Each loop is a flattened rounded lobe flanking the knot. A swept ribbon
-  // blade reads as an X or a pair of rabbit ears; a solid lobe reads as a bow.
+  // Two ribbon petals + a knot. A swept circular ribbon reads as doughnuts;
+  // solid ellipsoids read as ears; a flat petal pinched at both ends reads as
+  // folded cloth.
   for (const s of [-1, 1]) {
-    const loop = new THREE.Mesh(new THREE.SphereGeometry(1, 26, 20), bandMat);
+    const loop = new THREE.Mesh(bowPetal(s), bandMat);
     loop.name = 'bowLoop';
-    loop.scale.set(0.066, 0.044, 0.024);
-    loop.position.set(s * 0.055, 0.030, 0.002);
-    loop.rotation.z = s * 0.34;
     loop.castShadow = true;
     loop.userData.noOutline = true;
     bow.add(loop);
-    addOutline(loop, { thickness: 0.0024, color: 0x9a9abd });
+    addOutline(loop, { thickness: 0.0026, color: 0x767ba6 });
   }
 
-  const knot = new THREE.Mesh(puffyBox(0.030, 0.026, 0.022, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
+  const knot = new THREE.Mesh(puffyBox(0.030, 0.032, 0.026, { seg: 12, round: 0.5, bulge: 0.003 }), A.mat.trim);
   knot.position.set(0, 0.007, 0.006);
   knot.name = 'bowKnot';
   knot.castShadow = true;
   knot.userData.noOutline = true;
   bow.add(knot);
-  addOutline(knot, { thickness: 0.0022, color: 0x9a9abd });
+  addOutline(knot, { thickness: 0.0022, color: 0x767ba6 });
 
   // two short ribbon tails hanging behind the knot
   for (const s of [-1, 1]) {

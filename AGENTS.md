@@ -203,6 +203,21 @@ tools/
 * **Watch for a shadowed local named `g`.** The outfit builder's group is
   `const g = new THREE.Group()`; a local `const g = shirtGrow(...)` shadows it
   and the failure mode is a runtime `x.add is not a function` at boot.
+* **`tubeAlongCurve` leaves both ends open.** An open end shows the outline
+  shell's interior as a dark ellipse — the raised arm did exactly this, and it
+  is very visible in the video's face close-up. Taper the radius to a point over
+  the last few percent of `t` so the tube closes inside the deltoid / the hand;
+  a bigger deltoid does *not* fix it, because the hollow is a ring, not a cap.
+* **A bow loop has to be pinched at both ends.** Solid ellipsoids read as a
+  pair of rabbit ears; a ribbon swept around a closed path reads as doughnuts.
+  `bowPetal()` sweeps a flat cross-section along a path that leaves the knot as
+  a point, swells, and returns to a point — that is what reads as folded cloth.
+  The petals also need a darker outline than the kerchief, or the two whites
+  merge.
+* **A garment hem is a *step*, not a line.** The shirt and shorts only read as
+  two garments when the shorts are measurably wider than the shirt hem (the
+  reference is ~0.02 m wider). Matching radii plus a shadow band still reads as
+  one nightdress.
 * **Cel shading.** `toonGradient(steps, softness, floor)` builds the ramp.
   `floor` keeps downward-facing surfaces (jaw, under-chin) from reading grey.
 * Outlines are inverted-hull shells expanded along **vertex normals** in the
@@ -212,15 +227,31 @@ tools/
 
 ```bash
 node tools/showcase.mjs        # branded stills -> showcase/
-tools/video.sh                 # branded turnaround video -> showcase/*.mp4,*.webm
-tools/video.sh --encode-only   # re-encode from video/frames/ without re-rendering
+
+# two aspect ratios, 1600 px wide, each H.264 + VP9
+tools/video.sh --w 1600 --h 1200 --out showcase/yuuka-4x3.mp4     # 4:3
+tools/video.sh --w 1600 --h  900 --out showcase/yuuka-16x9.mp4    # 16:9
+
+tools/video.sh --encode-only --w 1600 --h 900 --out ...   # re-encode, no re-render
 ```
 
 `tools/video.mjs` scripts the camera through a 360° turntable, a face
 close-up, a back three-quarter and a hero push-in, and freezes the idle
-animation so the only motion is the camera. `tools/video.sh` lays a full-width
-black caption bar across the bottom of every frame with the model name in
-large white type and the tool name beneath it, then encodes H.264 + VP9.
+animation so the only motion is the camera. Frames land in
+`video/frames-<W>x<H>/` (git-ignored).
+
+**Shot distances are derived, not hand-tuned.** `FIT(subjectH, fill)` returns
+the camera distance that makes a subject of that height occupy `fill` of the
+frame, from the camera's 30° *vertical* field of view. Because the FOV is
+vertical, the same shot list frames the character identically at 4:3 and 16:9 —
+the two videos differ only in how much studio sits either side of the subject.
+Do not hard-code distances per aspect.
+
+`tools/video.sh` lays a full-width black caption bar across the bottom of every
+frame with the model name in large white type and the tool name beneath it. Bar
+height and both font sizes are fractions of the frame height (14 %, 4.5 %,
+2.2 %), so the credit reads the same on a 900-tall 16:9 frame as on a 1200-tall
+4:3 one.
 
 ## Deploying
 
@@ -262,11 +293,22 @@ This session rebuilt the model against the reference rather than tuning it:
   garment.
 * **Slippers** shrunk to a believable mule.
 
+Video deliverables this session:
+
+* `showcase/yuuka-4x3.mp4` — 1600×1200, 232 frames, 7.7 s
+* `showcase/yuuka-16x9.mp4` — 1600×900, same shot list
+* VP9 `.webm` alongside each
+
+Also fixed for the close-up shots: the bow now reads as a ribbon bow rather
+than rabbit ears, the crown is no longer two-tone, and the raised arm no longer
+shows its hollow interior.
+
 Honest gaps, in priority order:
 
-1. **The hair is a lock mass, not strands.** At close range the individual
-   locks read as broad ribbons; the reference is painted with fine separation.
-   A real fix is a swept-strand system or a strand shader on the shell.
+1. **The hair still reads as a curtain of straight strands from the front.**
+   It is a lock mass rather than a sheet now, but the locks hang almost
+   parallel; the reference has a flowing, tapering mass with a visible gloss
+   band. This is the single biggest remaining gap.
 2. **The kerchief is a smooth blob.** The reference's white cloth has folds and
    a visible knot; this one is a surface of revolution.
 3. **No cloth drape.** Shirt and shorts are smooth shells with a `folds()`

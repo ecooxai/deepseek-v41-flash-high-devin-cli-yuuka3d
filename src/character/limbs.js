@@ -98,18 +98,26 @@ export function buildArms() {
 
   for (const pose of [POSE.armRaised, POSE.armDown]) {
     const curve = curveFromPoints(pose.points, 0.5);
-    const geo = tubeAlongCurve(curve, ARM_RADIUS, { segs: 48, radial: 24 });
+    // `tubeAlongCurve` leaves both ends open, and an open end shows the
+    // outline shell's interior as a dark ellipse. Tapering the very ends to a
+    // point closes the tube inside the deltoid and inside the hand.
+    const armRadius = (t) =>
+      ARM_RADIUS(t) * smoothstep(0, 0.035, t) * smoothstep(1, 0.965, t);
+    const geo = tubeAlongCurve(curve, armRadius, { segs: 48, radial: 24 });
     const arm = new THREE.Mesh(geo, A.mat.skin);
     arm.name = 'arm' + (pose.side < 0 ? 'Raised' : 'Down');
     arm.castShadow = true;
     addOutline(arm, { thickness: 0.0034 });
     g.add(arm);
 
-    // deltoid blend
-    const delt = new THREE.Mesh(new THREE.SphereGeometry(0.043, 20, 16), A.mat.skin);
+    // Deltoid blend. It must be at least as wide as the arm's own radius at
+    // t = 0 (0.0455) in *every* direction: `tubeAlongCurve` leaves the tube's
+    // ends open, and a deltoid narrower than the tube lets the camera see
+    // straight down the hollow arm.
+    const delt = new THREE.Mesh(new THREE.SphereGeometry(0.052, 20, 16), A.mat.skin);
     delt.name = 'deltoid';
     delt.position.copy(pose.points[0]);
-    delt.scale.set(1.0, 1.15, 0.92);
+    delt.scale.set(0.94, 1.06, 1.0);
     delt.userData.noOutline = true;
     g.add(delt);
 

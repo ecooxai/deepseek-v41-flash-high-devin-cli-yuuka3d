@@ -300,9 +300,9 @@ export function buildHair() {
         const front = Math.sin(phi);
         // the parting lifts the sheet, leaving the triangle of bare forehead
         const dip = 0.250 * Math.exp(-Math.pow((su - PART) / 0.58, 2));
-        const thetaTop = 0.580 + 0.030 * front;
+        const thetaTop = 0.340 + 0.030 * front;
         // pointed tips: a slow zig-zag along the hem
-        const thetaBot = 1.300 - dip + 0.042 * Math.abs(Math.sin(u * Math.PI * 6.0));
+        const thetaBot = 1.300 - dip + 0.030 * Math.abs(Math.sin(u * Math.PI * 6.0));
         const theta = lerp(thetaTop, thetaBot, v);
         // fine strand grooves so the sheet is not one flat plate
         const groove = 0.004 * Math.sin(u * Math.PI * 11 + v * 1.5);

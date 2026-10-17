@@ -27,7 +27,7 @@ function folds(a, y, amp = 0.0035) {
  * shirt — collar, placket, pocket, buttons — has to sit *proud of this*, or it
  * is swallowed by the garment shell.
  */
-const shirtGrow = (y) => 0.0760 - 0.0450 * smoothstep(SHIRT_BOTTOM, SHIRT_TOP, y);
+const shirtGrow = (y) => 0.0700 - 0.0420 * smoothstep(SHIRT_BOTTOM, SHIRT_TOP, y);
 
 /** half-angle of the V-neck opening at a given height */
 function vHalfAngle(y) {
@@ -225,7 +225,7 @@ export function buildOutfit() {
       const y = lerp(0.718, 1.040, v);
       // widest just above the hem, then a slight tuck: bloomers balloon in
       // the middle and gather in again at the ruffle
-      const grow = 0.028 + 0.062 * Math.pow(1 - v, 0.50);
+      const grow = 0.028 + 0.080 * Math.pow(1 - v, 0.50);
       onTorso(a, y, grow + folds(a, y, 0.0030), out);
     },
     uv: (u, v) => [u * 2.2, v * 2.2],
@@ -246,7 +246,7 @@ export function buildOutfit() {
         const a = u * TAU;
         const y = lerp(1.006, 0.936, v);
         const gv = (y - 0.718) / 0.322;
-        onTorso(a, y, 0.028 + 0.062 * Math.pow(1 - gv, 0.50) + 0.0042 + folds(a, y, 0.0030), out);
+        onTorso(a, y, 0.028 + 0.080 * Math.pow(1 - gv, 0.50) + 0.0042 + folds(a, y, 0.0030), out);
       },
       uv: (u, v) => [u * 2.2, v],
     });
